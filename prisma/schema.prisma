@@ -23,3 +23,22 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Store {
+  id             String   @id @default(cuid()) // Identificador único
+  clientId       String   // Identificador del cliente
+  name           String   @unique // Nombre de la tienda
+  economicNumber String?  // Número económico o serial
+  country        String   // País
+  state          String   // Estado
+  municipality   String   // Municipio
+  neighborhood   String   // Colonia
+  street         String   // Calle
+  streetNumber   String   // Número de la calle
+  postalCode     String   // Código postal
+  latitude       Float    // Latitud para Google Maps
+  longitude      Float    // Longitud para Google Maps
+  createdAt      DateTime @default(now()) // Fecha de creación
+  updatedAt      DateTime @updatedAt // Última actualización
+  // products       Product[] // Relación con productos
+}
