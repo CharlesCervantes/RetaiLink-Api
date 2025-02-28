@@ -19,9 +19,11 @@ model User {
   apellido_paterno    String?
   apellido_materno    String?
   password  String
-  username  String
+  username  String //numero telefonico
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  Request Request[]
 }
 
 model Store {
@@ -40,5 +42,37 @@ model Store {
   longitude      Float    // Longitud para Google Maps
   createdAt      DateTime @default(now()) // Fecha de creación
   updatedAt      DateTime @updatedAt // Última actualización
-  // products       Product[] // Relación con productos
+
+  Request Request[]
+}
+
+model Request {
+  id          String   @id @default(cuid())
+  storeId     String   // Relación con la tienda
+  userId      String?  // Usuario que acepta la petición
+  status      Status   @default(PENDING) // Estado de la petición
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  store       Store    @relation(fields: [storeId], references: [id])
+  user        User?    @relation(fields: [userId], references: [id])
+
+  StatusUpdate StatusUpdate[]
+}
+
+model StatusUpdate {
+  id         String   @id @default(cuid())
+  requestId  String   // Relación con la petición
+  status     Status   // Nuevo estado
+  createdAt  DateTime @default(now())
+
+  request    Request  @relation(fields: [requestId], references: [id])
+}
+
+// Definimos un enum para los estados de la petición
+enum Status {
+  PENDING   // Petición generada
+  ACCEPTED  // Petición aceptada por el usuario
+  VALIDATED // Validación finalizada
+  COMPLETED // Petición completada
 }

@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsOptional, IsString, IsNumber, IsLatitude, IsLongitude } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsNotEmpty, IsOptional, IsString, IsNumber, IsLatitude, IsLongitude, IsInt, Min, Max } from 'class-validator';
 
 export class CreateStoreDto {
   @IsNotEmpty()
@@ -51,3 +52,19 @@ export class CreateStoreDto {
 }
 
 export class UpdateStoreDto extends CreateStoreDto {}
+
+export class PaginationQueryDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number = 1;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number = 10;
+}
+

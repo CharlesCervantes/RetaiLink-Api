@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Body, Param, Patch, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Delete, UseGuards, Request, Query } from '@nestjs/common';
 import { StoreService } from './store.service';
-import { CreateStoreDto, UpdateStoreDto } from './dto/store.dto';
+import { CreateStoreDto, PaginationQueryDto, UpdateStoreDto } from './dto/store.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'; // Importar el guard
 
 @Controller('api/v1/store')
@@ -19,7 +19,14 @@ export class StoreController {
     findAll() {
       return this.storeService.findAll();
     }
-  
+
+    @UseGuards(JwtAuthGuard)
+    @Get('pagination')
+    findAllPag(@Query() paginationQuery: PaginationQueryDto) {
+      const { page, limit } = paginationQuery;
+      return this.storeService.findAllPagination(page, limit);
+    }
+
     @UseGuards(JwtAuthGuard)
     @Get(':id')
     findOne(@Param('id') id: string) {

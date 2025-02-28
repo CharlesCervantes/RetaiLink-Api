@@ -15,6 +15,40 @@ export class StoreService {
       async findAll() {
         return this.prisma.store.findMany();
       }
+
+      async findAllPagination(page = 1, limit = 10) {
+        // Asegurarse de que page y limit sean números
+        const pageNumber = Number(page);
+        const limitNumber = Number(limit);
+        
+        // Calcular skip como número
+        const skip = (pageNumber - 1) * limitNumber;
+        
+        const [items, totalCount] = await Promise.all([
+          this.prisma.store.findMany({
+            skip,
+            take: limitNumber,
+            orderBy: { 
+              createdAt: 'desc'  // Asume que tienes un campo createdAt
+            }
+          }),
+          this.prisma.store.count(),
+        ]);
+    
+        const totalPages = Math.ceil(totalCount / limitNumber);
+        
+        return {
+          items,
+          meta: {
+            totalCount,
+            itemsPerPage: limitNumber,
+            currentPage: pageNumber,
+            totalPages,
+            hasNextPage: pageNumber < totalPages,
+            hasPreviousPage: pageNumber > 1,
+          }
+        };
+      }
     
       async findOne(id: string) {
         const store = await this.prisma.store.findUnique({ where: { id } });
