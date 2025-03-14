@@ -16,15 +16,17 @@ datasource db {
 
 model promotores {
   id_promotor             BigInt @id @default(autoincrement()) 
-  vc_nombre              String
-  vc_apellido_paterno    String
-  vc_apellido_materno    String
   vc_contrasena          String
-  vc_telefono            String 
+  vc_telefono            String
+  vc_correo              String 
   i_registro             Int 
   i_actualizacion        Int
 
   e_rol                    Roles @default(User)
+
+  perfil perfiles_promotor?
+
+  pedido pedido[]
 }
 
 
@@ -42,6 +44,22 @@ model usuarios {
 
   id_cliente            BigInt?
   cliente clientes? @relation(fields: [id_cliente], references: [id_cliente])
+
+  pedido pedido[]
+}
+
+model perfiles_promotor {
+  id_perfil_promotor     BigInt @id @default(autoincrement())
+  id_promotor            BigInt @unique
+  vc_nombre              String
+  vc_apellido_paterno    String
+  vc_apellido_materno    String
+  vc_telefono            String
+  vc_correo              String
+  i_registro             Int
+  i_actualizacion        Int
+
+  promotor promotores? @relation(fields: [id_promotor], references: [id_promotor])
 }
 
 model clientes {
@@ -56,56 +74,83 @@ model marcas {
   vc_nombre              String
   i_registro             Int
   i_actualizacion        Int
-
   id_cliente BigInt
+
   cliente clientes? @relation(fields: [id_cliente], references: [id_cliente])
 }
 
 // TODO: preguntar datos necesarios
-model establecimiento {
+model establecimientos {
   id_establecimiento     BigInt @id @default(autoincrement())
-  id_direccion           BigInt
-  id_localizacion        BigInt
+  id_direccion           BigInt @unique
+  id_localizacion        BigInt @unique
   vc_direccion           String
   vc_telefono            String
   i_registro             Int
-  i_actualizacion        Int
+  i_actualizacion        BigInt
+
+
+  direccion direcciones? @relation(fields: [id_direccion], references: [id_direccion])
+  localizacion localizaciones? @relation(fields: [id_localizacion], references: [id_localizacion])
+
+  pedido pedido[]
 }
 
-model pais {
+model paises {
   id_pais                BigInt @id @default(autoincrement())
   vc_nombre              String
   i_registro             Int
   i_actualizacion        Int
+  i_codigo_postal        Int
 
-  direccion direccion[]
+  estado estados[]
+  direccion direcciones[]
 }
 
-model estado {
+model estados {
   id_estado              BigInt @id @default(autoincrement())
   id_pais                BigInt
   vc_nombre              String
   i_registro             Int
   i_actualizacion        Int
+  i_codigo_postal        Int
+
+  pais paises? @relation(fields: [id_pais], references: [id_pais])
+
+  municipio municipios[]
+
+  direccion direcciones[]
 }
 
-model municipio {
+model municipios {
   id_municipio           BigInt @id @default(autoincrement())
   id_estado              BigInt
   vc_nombre              String
   i_registro             Int
   i_actualizacion        Int
+  i_codigo_postal        Int
+
+  estado estados? @relation(fields: [id_estado], references: [id_estado])
+
+  colonia colonias[]
+
+  direccion direcciones[]
 }
 
-model colonia {
+model colonias {
   id_colonia             BigInt @id @default(autoincrement())
   id_municipio           BigInt
   vc_nombre              String
   i_registro             Int
   i_actualizacion        Int
+  i_codigo_postal        Int
+
+  municipio municipios? @relation(fields: [id_municipio], references: [id_municipio])
+
+  direccion direcciones[]
 }
 
-model direccion {
+model direcciones {
   id_direccion           BigInt @id @default(autoincrement())
   id_pais                BigInt
   id_estado              BigInt
@@ -118,22 +163,49 @@ model direccion {
   i_registro             Int
   i_actualizacion        Int
 
-  pais pais? @relation(fields: [id_pais], references: [id_pais])
+  establecimiento establecimientos?
+
+  pais paises? @relation(fields: [id_pais], references: [id_pais])
+  estado estados? @relation(fields: [id_estado], references: [id_estado])
+  municipio municipios? @relation(fields: [id_municipio], references: [id_municipio])
+  colonia colonias? @relation(fields: [id_colonia], references: [id_colonia])
 }
 
-model Location {
-  id                     BigInt @id @default(autoincrement())
-  latitude               Decimal
-  longitude              Decimal
+model localizaciones {
+  id_localizacion                   BigInt @id @default(autoincrement())
+  f_latitud               Decimal
+  f_longitud              Decimal
   i_registro             Int
   i_actualizacion        Int
+
+  establecimineto establecimientos?
 }
+
+model pedido {
+  id_pedido              BigInt @id @default(autoincrement())
+  id_establecimiento     BigInt 
+  id_promotor            BigInt
+  id_usuario             BigInt
+  descripcion            String
+  i_entrega              Int
+  i_total                Int
+  i_registro             Int
+  i_actualizacion        Int
+
+  establecimiento establecimientos? @relation(fields: [id_establecimiento], references: [id_establecimiento])
+  promotor promotores? @relation(fields: [id_promotor], references: [id_promotor])
+  usuario usuarios? @relation(fields: [id_usuario], references: [id_usuario])
+}
+
+// TODO: Logs de cada entidad
 
 enum Roles {
   User
   Admin
   SuperAdmin
 }
+
+// TODO enum de estados
 
 
 
