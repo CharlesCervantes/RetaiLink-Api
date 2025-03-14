@@ -13,66 +13,192 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(cuid())
-  nombre      String?
-  apellido_paterno    String?
-  apellido_materno    String?
-  password  String
-  username  String //numero telefonico
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
-  Request Request[]
+model promotores {
+  id_promotor             BigInt @id @default(autoincrement()) 
+  vc_nombre              String
+  vc_apellido_paterno    String
+  vc_apellido_materno    String
+  vc_contrasena          String
+  vc_telefono            String 
+  i_registro             Int 
+  i_actualizacion        Int
+
+  e_rol                    Roles @default(User)
 }
 
-model Store {
-  id             String   @id @default(cuid()) // Identificador único
-  clientId       String   // Identificador del cliente
-  name           String   @unique // Nombre de la tienda
-  economicNumber String?  // Número económico o serial
-  country        String   // País
-  state          String   // Estado
-  municipality   String   // Municipio
-  neighborhood   String   // Colonia
-  street         String   // Calle
-  streetNumber   String   // Número de la calle
-  postalCode     String   // Código postal
-  latitude       Float    // Latitud para Google Maps
-  longitude      Float    // Longitud para Google Maps
-  createdAt      DateTime @default(now()) // Fecha de creación
-  updatedAt      DateTime @updatedAt // Última actualización
 
-  Request Request[]
+model usuarios {
+  id_usuario             BigInt @id @default(autoincrement()) 
+  vc_nombre              String
+  vc_apellido_paterno    String
+  vc_apellido_materno    String
+  vc_contrasena          String
+  vc_telefono            String 
+  i_registro             Int 
+  i_actualizacion        Int
+
+  e_rol                    Roles @default(User)
+
+  id_cliente            BigInt?
+  cliente clientes? @relation(fields: [id_cliente], references: [id_cliente])
 }
 
-model Request {
-  id          String   @id @default(cuid())
-  storeId     String   // Relación con la tienda
-  userId      String?  // Usuario que acepta la petición
-  status      Status   @default(PENDING) // Estado de la petición
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model clientes {
+  id_cliente             BigInt @id @default(autoincrement())
 
-  store       Store    @relation(fields: [storeId], references: [id])
-  user        User?    @relation(fields: [userId], references: [id])
-
-  StatusUpdate StatusUpdate[]
+  usuarios usuarios[]
+  marcas marcas[]
 }
 
-model StatusUpdate {
-  id         String   @id @default(cuid())
-  requestId  String   // Relación con la petición
-  status     Status   // Nuevo estado
-  createdAt  DateTime @default(now())
+model marcas {
+  id_marca               BigInt @id @default(autoincrement())
+  vc_nombre              String
+  i_registro             Int
+  i_actualizacion        Int
 
-  request    Request  @relation(fields: [requestId], references: [id])
+  id_cliente BigInt
+  cliente clientes? @relation(fields: [id_cliente], references: [id_cliente])
 }
 
-// Definimos un enum para los estados de la petición
-enum Status {
-  PENDING   // Petición generada
-  ACCEPTED  // Petición aceptada por el usuario
-  VALIDATED // Validación finalizada
-  COMPLETED // Petición completada
+// TODO: preguntar datos necesarios
+model establecimiento {
+  id_establecimiento     BigInt @id @default(autoincrement())
+  id_direccion           BigInt
+  id_localizacion        BigInt
+  vc_direccion           String
+  vc_telefono            String
+  i_registro             Int
+  i_actualizacion        Int
 }
+
+model pais {
+  id_pais                BigInt @id @default(autoincrement())
+  vc_nombre              String
+  i_registro             Int
+  i_actualizacion        Int
+
+  direccion direccion[]
+}
+
+model estado {
+  id_estado              BigInt @id @default(autoincrement())
+  id_pais                BigInt
+  vc_nombre              String
+  i_registro             Int
+  i_actualizacion        Int
+}
+
+model municipio {
+  id_municipio           BigInt @id @default(autoincrement())
+  id_estado              BigInt
+  vc_nombre              String
+  i_registro             Int
+  i_actualizacion        Int
+}
+
+model colonia {
+  id_colonia             BigInt @id @default(autoincrement())
+  id_municipio           BigInt
+  vc_nombre              String
+  i_registro             Int
+  i_actualizacion        Int
+}
+
+model direccion {
+  id_direccion           BigInt @id @default(autoincrement())
+  id_pais                BigInt
+  id_estado              BigInt
+  id_municipio           BigInt
+  id_colonia             BigInt
+  vc_calle               String
+  vc_numero_exterior     String
+  vc_numero_interior     String
+  vc_codigo_postal       String
+  i_registro             Int
+  i_actualizacion        Int
+
+  pais pais? @relation(fields: [id_pais], references: [id_pais])
+}
+
+model Location {
+  id                     BigInt @id @default(autoincrement())
+  latitude               Decimal
+  longitude              Decimal
+  i_registro             Int
+  i_actualizacion        Int
+}
+
+enum Roles {
+  User
+  Admin
+  SuperAdmin
+}
+
+
+
+
+// model Store {
+//   id             String   @id @default(cuid()) // Identificador único
+//   // clientId       String?   // Identificador del cliente
+//   name           String   @unique // Nombre de la tienda
+//   economicNumber String?  // Número económico o serial
+//   country        String   // País
+//   state          String   // Estado
+//   municipality   String   // Municipio
+//   neighborhood   String   // Colonia
+//   street         String   // Calle
+//   streetNumber   String   // Número de la calle
+//   postalCode     String   // Código postal
+//   latitude       Float    // Latitud para Google Maps
+//   longitude      Float    // Longitud para Google Maps
+//   createdAt      DateTime @default(now()) // Fecha de creación
+//   updatedAt      DateTime @updatedAt // Última actualización
+
+//   Request Request[]
+
+//   UserStoreSubscription UserStoreSubscription[]
+// }
+
+// model UserStoreSubscription {
+//   id        String   @id @default(cuid())
+//   userId    String   // ID del usuario suscrito
+//   storeId   String   // ID de la tienda a la que se suscribe
+//   createdAt DateTime @default(now()) // Fecha de suscripción
+
+//   user      User     @relation(fields: [userId], references: [id]) // Relación con User
+//   store     Store    @relation(fields: [storeId], references: [id]) // Relación con Store
+
+//   @@unique([userId, storeId]) // Evita suscripciones duplicadas
+// }
+
+// model Request {
+//   id          String   @id @default(cuid())
+//   storeId     String   // Relación con la tienda
+//   userId      String?  // Usuario que acepta la petición
+//   status      Status   @default(PENDING) // Estado de la petición
+//   createdAt   DateTime @default(now())
+//   updatedAt   DateTime @updatedAt
+
+//   store       Store    @relation(fields: [storeId], references: [id])
+//   user        User?    @relation(fields: [userId], references: [id])
+
+//   StatusUpdate StatusUpdate[]
+// }
+
+// model StatusUpdate {
+//   id         String   @id @default(cuid())
+//   requestId  String   // Relación con la petición
+//   status     Status   // Nuevo estado
+//   createdAt  DateTime @default(now())
+
+//   request    Request  @relation(fields: [requestId], references: [id])
+// }
+
+// // Definimos un enum para los estados de la petición
+// enum Status {
+//   PENDING   // Petición generada
+//   ACCEPTED  // Petición aceptada por el usuario
+//   VALIDATED // Validación finalizada
+//   COMPLETED // Petición completada
+// }
