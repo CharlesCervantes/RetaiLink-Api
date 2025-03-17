@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -22,7 +16,7 @@ model promotores {
   i_registro             Int 
   i_actualizacion        Int
 
-  e_rol                    Roles @default(User)
+  e_rol                    Roles @default(promotor)
 
   perfil perfiles_promotor?
 
@@ -40,7 +34,7 @@ model usuarios {
   i_registro             Int 
   i_actualizacion        Int
 
-  e_rol                    Roles @default(User)
+  e_rol                    Roles @default(administrador)
 
   id_cliente            BigInt?
   cliente clientes? @relation(fields: [id_cliente], references: [id_cliente])
@@ -79,7 +73,6 @@ model marcas {
   cliente clientes? @relation(fields: [id_cliente], references: [id_cliente])
 }
 
-// TODO: preguntar datos necesarios
 model establecimientos {
   id_establecimiento     BigInt @id @default(autoincrement())
   id_direccion           BigInt @unique
@@ -172,9 +165,9 @@ model direcciones {
 }
 
 model localizaciones {
-  id_localizacion                   BigInt @id @default(autoincrement())
-  f_latitud               Decimal
-  f_longitud              Decimal
+  id_localizacion        BigInt @id @default(autoincrement())
+  f_latitud              Decimal
+  f_longitud             Decimal
   i_registro             Int
   i_actualizacion        Int
 
@@ -191,86 +184,34 @@ model pedido {
   i_total                Int
   i_registro             Int
   i_actualizacion        Int
+  estado                 estados_podido @default(pendiente)
 
   establecimiento establecimientos? @relation(fields: [id_establecimiento], references: [id_establecimiento])
   promotor promotores? @relation(fields: [id_promotor], references: [id_promotor])
   usuario usuarios? @relation(fields: [id_usuario], references: [id_usuario])
 }
 
-// TODO: Logs de cada entidad
+model log {
+  id_log                 BigInt @id @default(autoincrement())
+  nombre_tabla           String
+  id_registro            BigInt
+  campos                 String
+  valores                String
+  vc_accion              String
+  i_registro             Int
+}	
+
 
 enum Roles {
-  User
-  Admin
-  SuperAdmin
+  usuario
+  promotor
+  administrador
+  super_administrador
 }
 
-// TODO enum de estados
-
-
-
-
-// model Store {
-//   id             String   @id @default(cuid()) // Identificador único
-//   // clientId       String?   // Identificador del cliente
-//   name           String   @unique // Nombre de la tienda
-//   economicNumber String?  // Número económico o serial
-//   country        String   // País
-//   state          String   // Estado
-//   municipality   String   // Municipio
-//   neighborhood   String   // Colonia
-//   street         String   // Calle
-//   streetNumber   String   // Número de la calle
-//   postalCode     String   // Código postal
-//   latitude       Float    // Latitud para Google Maps
-//   longitude      Float    // Longitud para Google Maps
-//   createdAt      DateTime @default(now()) // Fecha de creación
-//   updatedAt      DateTime @updatedAt // Última actualización
-
-//   Request Request[]
-
-//   UserStoreSubscription UserStoreSubscription[]
-// }
-
-// model UserStoreSubscription {
-//   id        String   @id @default(cuid())
-//   userId    String   // ID del usuario suscrito
-//   storeId   String   // ID de la tienda a la que se suscribe
-//   createdAt DateTime @default(now()) // Fecha de suscripción
-
-//   user      User     @relation(fields: [userId], references: [id]) // Relación con User
-//   store     Store    @relation(fields: [storeId], references: [id]) // Relación con Store
-
-//   @@unique([userId, storeId]) // Evita suscripciones duplicadas
-// }
-
-// model Request {
-//   id          String   @id @default(cuid())
-//   storeId     String   // Relación con la tienda
-//   userId      String?  // Usuario que acepta la petición
-//   status      Status   @default(PENDING) // Estado de la petición
-//   createdAt   DateTime @default(now())
-//   updatedAt   DateTime @updatedAt
-
-//   store       Store    @relation(fields: [storeId], references: [id])
-//   user        User?    @relation(fields: [userId], references: [id])
-
-//   StatusUpdate StatusUpdate[]
-// }
-
-// model StatusUpdate {
-//   id         String   @id @default(cuid())
-//   requestId  String   // Relación con la petición
-//   status     Status   // Nuevo estado
-//   createdAt  DateTime @default(now())
-
-//   request    Request  @relation(fields: [requestId], references: [id])
-// }
-
-// // Definimos un enum para los estados de la petición
-// enum Status {
-//   PENDING   // Petición generada
-//   ACCEPTED  // Petición aceptada por el usuario
-//   VALIDATED // Validación finalizada
-//   COMPLETED // Petición completada
-// }
+enum estados_podido {
+  pendiente  
+  aceptado  
+  validado 
+  completado
+}
