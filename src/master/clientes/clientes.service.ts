@@ -10,24 +10,60 @@ export class ClientesService {
   constructor(private prisma: PrismaService) {}
 
   create(createClienteDto: CreateClienteDto) {
+    if (!createClienteDto.vc_nombre) {
+      throw new Error('El campo nombre es obligatorio');
+    }
+  
     return this.prisma.clientes.create({
-      data: createClienteDto
+      data: {
+        vc_nombre: createClienteDto.vc_nombre
+      }
+    });
+  }
+  
+
+  findAll() {
+    return this.prisma.clientes.findMany({
+      where: {
+        b_activo: true
+      },
+      include: {
+        marcas: true,
+      }
     });
   }
 
-  findAll() {
-    return `This action returns all clientes`;
+  findOne(id: string) {
+    return this.prisma.clientes.findUnique({
+      where: {
+        id_cliente: id,
+        b_activo: true
+      },
+      include: {
+        marcas: true,
+      }
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} cliente`;
+  update(id: string, updateClienteDto: UpdateClienteDto) {
+    return this.prisma.clientes.update({
+      where: {
+        id_cliente: id
+      },
+      data: {
+        vc_nombre: updateClienteDto.vc_nombre
+      }
+    });
   }
 
-  update(id: number, updateClienteDto: UpdateClienteDto) {
-    return `This action updates a #${id} cliente`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} cliente`;
+  remove(id: string) {
+    return this.prisma.clientes.update({
+      where: {
+        id_cliente: id
+      },
+      data: {
+        b_activo: false
+      }
+    });
   }
 }

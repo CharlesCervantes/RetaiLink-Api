@@ -2,10 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { CreateMarcaDto } from './dto/create-marca.dto';
 import { UpdateMarcaDto } from './dto/update-marca.dto';
 
+import { PrismaService } from 'src/prisma/prisma.service';
+
 @Injectable()
 export class MarcasService {
+  constructor(private prisma: PrismaService) {}
+
   create(createMarcaDto: CreateMarcaDto) {
-    return 'This action adds a new marca';
+    return this.prisma.marcas.create({
+      data: {
+        vc_nombre: createMarcaDto.vc_nombre,
+        id_cliente: createMarcaDto.id_cliente
+      }
+    });
   }
 
   findAll() {

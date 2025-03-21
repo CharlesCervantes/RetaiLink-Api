@@ -9,7 +9,7 @@ datasource db {
 
 
 model promotores {
-  id_promotor             BigInt @id @default(autoincrement()) 
+  id_promotor            String @id @default(cuid()) 
   vc_contrasena          String
   vc_telefono            String
   vc_correo              String 
@@ -25,62 +25,74 @@ model promotores {
 
 
 model usuarios {
-  id_usuario             BigInt @id @default(autoincrement()) 
+  id_usuario             String @id @default(cuid()) 
   vc_nombre              String
   vc_apellido_paterno    String
   vc_apellido_materno    String
+  vc_correo              String? @unique
   vc_contrasena          String
-  vc_telefono            String 
-  i_registro             Int 
-  i_actualizacion        Int
+  vc_telefono            String? @unique 
+  dt_registro            DateTime @default(now()) 
+  dt_actualizacion       DateTime @updatedAt
+  i_status               Boolean @default(true)
 
   e_rol                    Roles @default(administrador)
 
-  id_cliente            BigInt?
+  id_cliente            String?
   cliente clientes? @relation(fields: [id_cliente], references: [id_cliente])
 
   pedido pedido[]
 }
 
 model perfiles_promotor {
-  id_perfil_promotor     BigInt @id @default(autoincrement())
-  id_promotor            BigInt @unique
+  id_perfil_promotor     String @id @default(cuid())
+  id_promotor            String @unique
   vc_nombre              String
   vc_apellido_paterno    String
   vc_apellido_materno    String
   vc_telefono            String
   vc_correo              String
-  i_registro             Int
-  i_actualizacion        Int
+  dt_registro            DateTime @default(now())
+  dt_actualizacion       DateTime @updatedAt
+  i_status               Boolean @default(true) 
 
   promotor promotores? @relation(fields: [id_promotor], references: [id_promotor])
 }
 
+
+
+// Esto es equivalente a la organizacion
 model clientes {
-  id_cliente             BigInt @id @default(autoincrement())
+  id_cliente             String @id @default(cuid())
+  vc_nombre               String
+  dt_registro             DateTime @default(now())
+  dt_actualizacion        DateTime @updatedAt
+  b_activo                Boolean @default(true)
+
 
   usuarios usuarios[]
   marcas marcas[]
 }
 
 model marcas {
-  id_marca               BigInt @id @default(autoincrement())
+  id_marca               String @id @default(cuid())
   vc_nombre              String
-  i_registro             Int
-  i_actualizacion        Int
-  id_cliente BigInt
+  id_cliente             String
+  dt_registro            DateTime @default(now())
+  dt_actualizacion       DateTime @updatedAt
+  b_activo               Boolean @default(true)
 
   cliente clientes? @relation(fields: [id_cliente], references: [id_cliente])
 }
 
 model establecimientos {
-  id_establecimiento     BigInt @id @default(autoincrement())
-  id_direccion           BigInt @unique
-  id_localizacion        BigInt @unique
-  vc_direccion           String
+  id_establecimiento     String @id @default(cuid())
+  id_direccion           String @unique
+  id_localizacion        String @unique
+  // vc_direccion           String
   vc_telefono            String
   i_registro             Int
-  i_actualizacion        BigInt
+  i_actualizacion        String
 
 
   direccion direcciones? @relation(fields: [id_direccion], references: [id_direccion])
@@ -90,7 +102,7 @@ model establecimientos {
 }
 
 model paises {
-  id_pais                BigInt @id @default(autoincrement())
+  id_pais                String @id @default(cuid())
   vc_nombre              String
   i_registro             Int
   i_actualizacion        Int
@@ -101,8 +113,8 @@ model paises {
 }
 
 model estados {
-  id_estado              BigInt @id @default(autoincrement())
-  id_pais                BigInt
+  id_estado              String @id @default(cuid())
+  id_pais                String
   vc_nombre              String
   i_registro             Int
   i_actualizacion        Int
@@ -116,8 +128,8 @@ model estados {
 }
 
 model municipios {
-  id_municipio           BigInt @id @default(autoincrement())
-  id_estado              BigInt
+  id_municipio           String @id @default(cuid())
+  id_estado              String
   vc_nombre              String
   i_registro             Int
   i_actualizacion        Int
@@ -131,8 +143,8 @@ model municipios {
 }
 
 model colonias {
-  id_colonia             BigInt @id @default(autoincrement())
-  id_municipio           BigInt
+  id_colonia             String @id @default(cuid())
+  id_municipio           String
   vc_nombre              String
   i_registro             Int
   i_actualizacion        Int
@@ -144,14 +156,14 @@ model colonias {
 }
 
 model direcciones {
-  id_direccion           BigInt @id @default(autoincrement())
-  id_pais                BigInt
-  id_estado              BigInt
-  id_municipio           BigInt
-  id_colonia             BigInt
+  id_direccion           String @id @default(cuid())
+  id_pais                String
+  id_estado              String
+  id_municipio           String
+  id_colonia             String
   vc_calle               String
-  vc_numero_exterior     String
-  vc_numero_interior     String
+  vc_numero_exterior     String?
+  vc_numero_interior     String?
   vc_codigo_postal       String
   i_registro             Int
   i_actualizacion        Int
@@ -165,7 +177,7 @@ model direcciones {
 }
 
 model localizaciones {
-  id_localizacion        BigInt @id @default(autoincrement())
+  id_localizacion        String @id @default(cuid())
   f_latitud              Decimal
   f_longitud             Decimal
   i_registro             Int
@@ -175,10 +187,10 @@ model localizaciones {
 }
 
 model pedido {
-  id_pedido              BigInt @id @default(autoincrement())
-  id_establecimiento     BigInt 
-  id_promotor            BigInt
-  id_usuario             BigInt
+  id_pedido              String @id @default(cuid())
+  id_establecimiento     String 
+  id_promotor            String
+  id_usuario             String
   descripcion            String
   i_entrega              Int
   i_total                Int
@@ -192,9 +204,9 @@ model pedido {
 }
 
 model log {
-  id_log                 BigInt @id @default(autoincrement())
+  id_log                 String @id @default(cuid())
   nombre_tabla           String
-  id_registro            BigInt
+  id_registro            String
   campos                 String
   valores                String
   vc_accion              String
