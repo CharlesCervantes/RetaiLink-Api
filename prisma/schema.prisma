@@ -87,9 +87,10 @@ model marcas {
 
 model establecimientos {
   id_establecimiento     String @id @default(cuid())
+  vc_nombre              String
+  vc_numero_serie        String?
   id_direccion           String @unique
   id_localizacion        String @unique
-  // vc_direccion           String
   vc_telefono            String
   i_registro             Int
   i_actualizacion        String
@@ -104,9 +105,12 @@ model establecimientos {
 model paises {
   id_pais                String @id @default(cuid())
   vc_nombre              String
-  i_registro             Int
-  i_actualizacion        Int
-  i_codigo_postal        Int
+  vc_nombre_oficial      String?
+  vc_codigo_iso          String  // Ejemplo: "MX"
+  vc_indicativo          String? // Ejemplo: +52
+  dt_registro            DateTime @default(now())
+  dt_actualizacion       DateTime @updatedAt
+  i_codigo_postal        Int?
 
   estado estados[]
   direccion direcciones[]
@@ -116,14 +120,13 @@ model estados {
   id_estado              String @id @default(cuid())
   id_pais                String
   vc_nombre              String
+  vc_clave               String?
   i_registro             Int
   i_actualizacion        Int
-  i_codigo_postal        Int
+  i_codigo_postal        Int?
 
   pais paises? @relation(fields: [id_pais], references: [id_pais])
-
   municipio municipios[]
-
   direccion direcciones[]
 }
 
@@ -131,9 +134,10 @@ model municipios {
   id_municipio           String @id @default(cuid())
   id_estado              String
   vc_nombre              String
+  vc_clave               String?
   i_registro             Int
   i_actualizacion        Int
-  i_codigo_postal        Int
+  i_codigo_postal        Int?
 
   estado estados? @relation(fields: [id_estado], references: [id_estado])
 
@@ -146,9 +150,10 @@ model colonias {
   id_colonia             String @id @default(cuid())
   id_municipio           String
   vc_nombre              String
+  i_codigo_postal        Int?
   i_registro             Int
   i_actualizacion        Int
-  i_codigo_postal        Int
+  
 
   municipio municipios? @relation(fields: [id_municipio], references: [id_municipio])
 
