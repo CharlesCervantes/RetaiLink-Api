@@ -121,9 +121,10 @@ model estados {
   id_pais                String
   vc_nombre              String
   vc_clave               String?
-  i_registro             Int
-  i_actualizacion        Int
+  dt_registro            DateTime @default(now())
+  dt_actualizacion       DateTime @updatedAt
   i_codigo_postal        Int?
+  i_status              Boolean @default(true)
 
   pais paises? @relation(fields: [id_pais], references: [id_pais])
   municipio municipios[]

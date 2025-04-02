@@ -1,26 +1,52 @@
 import { Injectable } from '@nestjs/common';
 import { CreatePaiseDto } from './dto/create-paise.dto';
 import { UpdatePaiseDto } from './dto/update-paise.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class PaisesService {
-  create(createPaiseDto: CreatePaiseDto) {
-    return 'This action adds a new paise';
+  constructor(private prisma: PrismaService) {}
+
+  async create(createPaiseDto: CreatePaiseDto) {
+    const query = await this.prisma.paises.create({
+      data: createPaiseDto, 
+    });
+    return query;
   }
 
-  findAll() {
-    return `This action returns all paises`;
+  async findAll() {
+    const query = await this.prisma.paises.findMany({});
+    return query;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} paise`;
+  async findOne(id: string) {
+    const query = await this.prisma.paises.findUnique({
+      where: { id_pais: id },
+    });
+    return query;
   }
 
-  update(id: number, updatePaiseDto: UpdatePaiseDto) {
-    return `This action updates a #${id} paise`;
+  async findByName(name: string) {
+    const query = await this.prisma.paises.findMany({
+      where: { vc_nombre: { contains: name } },
+    });
+    return query;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} paise`;
+ async update(id: string, updatePaiseDto: UpdatePaiseDto) {
+    const query = await this.prisma.paises.update({
+      where: { id_pais: id },
+      data: updatePaiseDto,
+    })
+
+    return query;
+  }
+
+  async remove(id: string) {
+    const query = await this.prisma.paises.delete({
+      where: { id_pais: id },
+    });
+
+    return query;;
   }
 }
