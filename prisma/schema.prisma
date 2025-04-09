@@ -13,14 +13,15 @@ model promotores {
   vc_contrasena          String
   vc_telefono            String
   vc_correo              String 
-  i_registro             Int 
-  i_actualizacion        Int
+  dt_registro            DateTime @default(now())
+  dt_actualizacion       DateTime @updatedAt
+  b_activo            Boolean @default(true)
 
   e_rol                    Roles @default(promotor)
 
   perfil perfiles_promotor?
 
-  pedido pedido[]
+  pedidos pedidos[]
 }
 
 
@@ -34,14 +35,14 @@ model usuarios {
   vc_telefono            String? @unique 
   dt_registro            DateTime @default(now()) 
   dt_actualizacion       DateTime @updatedAt
-  i_status               Boolean @default(true)
+  b_activo               Boolean @default(true)
 
   e_rol                    Roles @default(administrador)
 
   id_cliente            String?
   cliente clientes? @relation(fields: [id_cliente], references: [id_cliente])
 
-  pedido pedido[]
+  pedidos pedidos[]
 }
 
 model perfiles_promotor {
@@ -54,7 +55,7 @@ model perfiles_promotor {
   vc_correo              String
   dt_registro            DateTime @default(now())
   dt_actualizacion       DateTime @updatedAt
-  i_status               Boolean @default(true) 
+  b_activo               Boolean @default(true) 
 
   promotor promotores? @relation(fields: [id_promotor], references: [id_promotor])
 }
@@ -92,14 +93,15 @@ model establecimientos {
   id_direccion           String @unique
   id_localizacion        String @unique
   vc_telefono            String
-  i_registro             Int
-  i_actualizacion        String
+  dt_registro            DateTime @default(now())
+  dt_actualizacion       DateTime @updatedAt
+  b_activo               Boolean @default(true)
 
 
   direccion direcciones? @relation(fields: [id_direccion], references: [id_direccion])
   localizacion localizaciones? @relation(fields: [id_localizacion], references: [id_localizacion])
 
-  pedido pedido[]
+  pedidos pedidos[]
 }
 
 model paises {
@@ -110,6 +112,7 @@ model paises {
   vc_indicativo          String? // Ejemplo: +52
   dt_registro            DateTime @default(now())
   dt_actualizacion       DateTime @updatedAt
+  b_activo               Boolean @default(true)
   i_codigo_postal        Int?
 
   estado estados[]
@@ -121,14 +124,14 @@ model estados {
   id_pais                String
   vc_nombre              String
   vc_clave               String?
+  i_codigo_postal        Int?
   dt_registro            DateTime @default(now())
   dt_actualizacion       DateTime @updatedAt
-  i_codigo_postal        Int?
-  i_status              Boolean @default(true)
+  b_activo              Boolean @default(true)
 
   pais paises? @relation(fields: [id_pais], references: [id_pais])
-  municipio municipios[]
-  direccion direcciones[]
+  municipios municipios[]
+  direcciones direcciones[]
 }
 
 model municipios {
@@ -136,15 +139,16 @@ model municipios {
   id_estado              String
   vc_nombre              String
   vc_clave               String?
-  i_registro             Int
-  i_actualizacion        Int
   i_codigo_postal        Int?
+  dt_registro            DateTime @default(now())
+  dt_actualizacion       DateTime @updatedAt
+  b_activo               Boolean @default(true)
 
   estado estados? @relation(fields: [id_estado], references: [id_estado])
 
-  colonia colonias[]
+  colonias colonias[]
 
-  direccion direcciones[]
+  direcciones direcciones[]
 }
 
 model colonias {
@@ -152,13 +156,14 @@ model colonias {
   id_municipio           String
   vc_nombre              String
   i_codigo_postal        Int?
-  i_registro             Int
-  i_actualizacion        Int
+  dt_registro            DateTime @default(now())
+  dt_actualizacion       DateTime @updatedAt
+  b_activo               Boolean @default(true)
   
 
   municipio municipios? @relation(fields: [id_municipio], references: [id_municipio])
 
-  direccion direcciones[]
+  direcciones direcciones[]
 }
 
 model direcciones {
@@ -171,8 +176,9 @@ model direcciones {
   vc_numero_exterior     String?
   vc_numero_interior     String?
   vc_codigo_postal       String
-  i_registro             Int
-  i_actualizacion        Int
+  dt_registro            DateTime @default(now())
+  dt_actualizacion       DateTime @updatedAt
+  b_activo               Boolean @default(true)
 
   establecimiento establecimientos?
 
@@ -186,13 +192,14 @@ model localizaciones {
   id_localizacion        String @id @default(cuid())
   f_latitud              Decimal
   f_longitud             Decimal
-  i_registro             Int
-  i_actualizacion        Int
+  dt_registro            DateTime @default(now())
+  dt_actualizacion       DateTime @updatedAt
+  b_activo               Boolean @default(true)
 
   establecimineto establecimientos?
 }
 
-model pedido {
+model pedidos {
   id_pedido              String @id @default(cuid())
   id_establecimiento     String 
   id_promotor            String
@@ -200,25 +207,15 @@ model pedido {
   descripcion            String
   i_entrega              Int
   i_total                Int
-  i_registro             Int
-  i_actualizacion        Int
   estado                 estados_podido @default(pendiente)
+  dt_registro            DateTime @default(now())
+  dt_actualizacion       DateTime @updatedAt
+  b_activo               Boolean @default(true)
 
   establecimiento establecimientos? @relation(fields: [id_establecimiento], references: [id_establecimiento])
   promotor promotores? @relation(fields: [id_promotor], references: [id_promotor])
   usuario usuarios? @relation(fields: [id_usuario], references: [id_usuario])
 }
-
-model log {
-  id_log                 String @id @default(cuid())
-  nombre_tabla           String
-  id_registro            String
-  campos                 String
-  valores                String
-  vc_accion              String
-  i_registro             Int
-}	
-
 
 enum Roles {
   usuario
