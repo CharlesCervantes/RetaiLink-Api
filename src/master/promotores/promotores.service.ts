@@ -1,26 +1,38 @@
 import { Injectable } from '@nestjs/common';
-import { CreatePromotoreDto } from './dto/create-promotore.dto';
-import { UpdatePromotoreDto } from './dto/update-promotore.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { PromotorDTO } from 'src/dto/promotor.dto';
+
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class PromotoresService {
-  create(createPromotoreDto: CreatePromotoreDto) {
-    return 'This action adds a new promotore';
-  }
+    constructor(private prisma: PrismaService){}
 
-  findAll() {
-    return `This action returns all promotores`;
-  }
+    async registrarPromotor(promotor: PromotorDTO){
+        try {
+            
+        } catch (error) {
+            
+        }
+    }
 
-  findOne(id: number) {
-    return `This action returns a #${id} promotore`;
-  }
+    async obtenerPromotorPorEmail(email: string) {
+        const promotor = await this.prisma.promotores.findUnique({
+            where: {
+                vc_correo: email,
+            },
+        });
 
-  update(id: number, updatePromotoreDto: UpdatePromotoreDto) {
-    return `This action updates a #${id} promotore`;
-  }
+        return promotor;
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} promotore`;
-  }
+    async obtenerPromotorPorTelefono(telefono: string) {
+        const promotor = await this.prisma.promotores.findUnique({
+            where: {
+                vc_telefono: telefono,
+            },
+        });
+
+        return promotor;
+    }
 }

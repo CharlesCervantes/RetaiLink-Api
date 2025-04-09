@@ -11,8 +11,8 @@ datasource db {
 model promotores {
   id_promotor            String @id @default(cuid()) 
   vc_contrasena          String
-  vc_telefono            String
-  vc_correo              String 
+  vc_telefono            String @unique
+  vc_correo              String @unique
   dt_registro            DateTime @default(now())
   dt_actualizacion       DateTime @updatedAt
   b_activo            Boolean @default(true)
