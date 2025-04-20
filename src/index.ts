@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
 import {testConnection} from './config/database';
+import adminRouter from './app_admin/index';
 
 dotenv.config();
 
@@ -17,11 +18,12 @@ app.use(express.urlencoded({extended: true}));
 
 
 // Routes
+app.use('/retailink-api/admin', adminRouter);
 
 
 // Ruta de prueba
-app.get('/', (req, res) => {
-    res.send('API is running...');
+app.get('/', (_req, _res) => {
+    _res.send('API is running...');
 });
 
 // Start server
