@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import {testConnection} from './config/database';
 import adminRouter from './app_admin/index';
+import promotorRouter from './app_mobile/index';
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.use(express.urlencoded({extended: true}));
 
 // Routes
 app.use('/retailink-api/admin', adminRouter);
+app.use('/retailink-api/mobile', promotorRouter);
 
 
 // Ruta de prueba
