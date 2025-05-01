@@ -1,5 +1,5 @@
 import {Request, Response} from 'express'
-import {create_promotor, verify_promotor} from '@/core/promotor'
+import {create_promotor, verify_promotor, obtener_detalles_promotor} from '@/core/promotor'
 import {generate_token} from '@/core/utils'
 
 export const crear_promotor = async (req: Request, res: Response) => {
@@ -39,6 +39,8 @@ export const login_promotor = async (req: Request, res: Response) => {
                 message: 'Invalid credentials' 
             });
         }
+
+        const details_promotor = await obtener_detalles_promotor(promotor.id_promotor!);
         
         // Aquí podrías generar un token JWT si quieres implementar autenticación con tokens
 
@@ -51,7 +53,8 @@ export const login_promotor = async (req: Request, res: Response) => {
             ok: true,
             data: {
                 access_token: token,
-                user: promotor
+                user: promotor,
+                details: details_promotor
             },
             message: 'Login successful'
         });
