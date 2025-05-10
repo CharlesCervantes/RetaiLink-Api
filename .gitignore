@@ -1,56 +1,63 @@
-# compiled output
-/dist
-/node_modules
-/build
+# Dependencias
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Archivos compilados
+dist/
+build/
+*.tsbuildinfo
+
+# Archivos de entorno
+.env
+.env.local
+.env.development
+.env.test
+.env.production
 
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
-pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-lerna-debug.log*
 
-# OS
+# Sistema operativo
 .DS_Store
+Thumbs.db
+desktop.ini
 
-# Tests
-/coverage
-/.nyc_output
-
-# IDEs and editors
-/.idea
-.project
-.classpath
-.c9/
-*.launch
-.settings/
+# Editores e IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+.history/
+*.sublime-project
 *.sublime-workspace
 
-# IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+# Directorios de coverage y testing
+coverage/
+.nyc_output/
 
-# dotenv environment variable files
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
+# Cache y directorios temporales
+.cache/
+.tmp/
+tmp/
+temp/
 
-# temp directory
-.temp
-.tmp
+# Archivos específicos de MySQL
+*.dump
+*.mwb
 
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
+# Configuración local
+config.local.js
+.env.*.local
 
-# Diagnostic reports (https://nodejs.org/api/report.html)
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+# Certificados y claves
+*.pem
+*.key
+*.crt
