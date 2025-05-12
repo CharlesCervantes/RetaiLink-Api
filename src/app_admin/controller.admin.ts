@@ -1,8 +1,256 @@
 import { Request, Response } from 'express';
 import { create_user } from '@/core/usuarios';
-import { create_producto, create_pregunta_producto } from '@/core/productos';
-import { create_establecimiento } from '@/core/establecimientos';
+import { create_producto } from '@/core/productos';
+import { 
+    create_establecimiento, 
+    get_establecimiento, 
+    get_all_establecimientos, 
+    update_establecimiento, 
+    delete_establecimiento, 
+    hard_delete_establecimiento,
+    search_establecimientos
+} from '@/core/establecimientos';
 import { create_ticket, create_ticket_producto } from '@/core/tickets';
+
+// Crear un nuevo establecimiento
+export const createEstablecimiento = async (req: Request, res: Response) => {
+    try {
+        const { establecimiento } = req.body;
+        
+        if (!establecimiento || !establecimiento.vc_nombre) {
+            return res.status(400).json({
+                ok: false,
+                data: null,
+                message: 'El nombre del establecimiento es requerido'
+            });
+        }
+        
+        const new_establecimiento_id = await create_establecimiento(establecimiento);
+        
+        return res.status(201).json({
+            ok: true,
+            data: { id: new_establecimiento_id },
+            message: 'Establecimiento creado exitosamente'
+        });
+    } catch (error) {
+        console.error('Error al crear establecimiento:', error);
+        return res.status(500).json({
+            ok: false,
+            data: null,
+            message: 'Error interno del servidor'
+        });
+    }
+}
+// Obtener un establecimiento por ID
+export const getEstablecimiento = async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id);
+        
+        if (isNaN(id)) {
+            return res.status(400).json({
+                ok: false,
+                data: null,
+                message: 'ID de establecimiento inválido'
+            });
+        }
+        
+        const establecimiento = await get_establecimiento(id);
+        
+        if (!establecimiento) {
+            return res.status(404).json({
+                ok: false,
+                data: null,
+                message: 'Establecimiento no encontrado'
+            });
+        }
+        
+        return res.status(200).json({
+            ok: true,
+            data: establecimiento,
+            message: 'Establecimiento obtenido exitosamente'
+        });
+    } catch (error) {
+        console.error('Error al obtener establecimiento:', error);
+        return res.status(500).json({
+            ok: false,
+            data: null,
+            message: 'Error interno del servidor'
+        });
+    }
+}
+// Obtener todos los establecimientos
+export const getAllEstablecimientos = async (req: Request, res: Response) => {
+    try {
+        // Comprobar si hay un término de búsqueda
+        const { search } = req.query;
+        
+        let establecimientos;
+        
+        if (search && typeof search === 'string') {
+            establecimientos = await search_establecimientos(search);
+        } else {
+            establecimientos = await get_all_establecimientos();
+        }
+        
+        return res.status(200).json({
+            ok: true,
+            data: establecimientos,
+            message: 'Establecimientos obtenidos exitosamente'
+        });
+    } catch (error) {
+        console.error('Error al obtener establecimientos:', error);
+        return res.status(500).json({
+            ok: false,
+            data: null,
+            message: 'Error interno del servidor'
+        });
+    }
+}
+// Actualizar un establecimiento
+export const updateEstablecimiento = async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id);
+        const { establecimiento } = req.body;
+        
+        if (isNaN(id)) {
+            return res.status(400).json({
+                ok: false,
+                data: null,
+                message: 'ID de establecimiento inválido'
+            });
+        }
+        
+        if (!establecimiento) {
+            return res.status(400).json({
+                ok: false,
+                data: null,
+                message: 'Datos del establecimiento requeridos'
+            });
+        }
+        
+        // Verificar si el establecimiento existe
+        const existing = await get_establecimiento(id);
+        
+        if (!existing) {
+            return res.status(404).json({
+                ok: false,
+                data: null,
+                message: 'Establecimiento no encontrado'
+            });
+        }
+        
+        const updated = await update_establecimiento(id, establecimiento);
+        
+        if (!updated) {
+            return res.status(400).json({
+                ok: false,
+                data: null,
+                message: 'No se pudo actualizar el establecimiento'
+            });
+        }
+        
+        // Obtener el establecimiento actualizado
+        const updatedEstablecimiento = await get_establecimiento(id);
+        
+        return res.status(200).json({
+            ok: true,
+            data: updatedEstablecimiento,
+            message: 'Establecimiento actualizado exitosamente'
+        });
+    } catch (error) {
+        console.error('Error al actualizar establecimiento:', error);
+        return res.status(500).json({
+            ok: false,
+            data: null,
+            message: 'Error interno del servidor'
+        });
+    }
+}
+// Eliminar un establecimiento (eliminación lógica)
+export const deleteEstablecimiento = async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id);
+        
+        if (isNaN(id)) {
+            return res.status(400).json({
+                ok: false,
+                data: null,
+                message: 'ID de establecimiento inválido'
+            });
+        }
+        
+        // Verificar si el establecimiento existe
+        const existing = await get_establecimiento(id);
+        
+        if (!existing) {
+            return res.status(404).json({
+                ok: false,
+                data: null,
+                message: 'Establecimiento no encontrado'
+            });
+        }
+        
+        const deleted = await delete_establecimiento(id);
+        
+        if (!deleted) {
+            return res.status(400).json({
+                ok: false,
+                data: null,
+                message: 'No se pudo eliminar el establecimiento'
+            });
+        }
+        
+        return res.status(200).json({
+            ok: true,
+            data: null,
+            message: 'Establecimiento eliminado exitosamente'
+        });
+    } catch (error) {
+        console.error('Error al eliminar establecimiento:', error);
+        return res.status(500).json({
+            ok: false,
+            data: null,
+            message: 'Error interno del servidor'
+        });
+    }
+}
+// Eliminar un establecimiento permanentemente (eliminación física)
+export const hardDeleteEstablecimiento = async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id);
+        
+        if (isNaN(id)) {
+            return res.status(400).json({
+                ok: false,
+                data: null,
+                message: 'ID de establecimiento inválido'
+            });
+        }
+        
+        const deleted = await hard_delete_establecimiento(id);
+        
+        if (!deleted) {
+            return res.status(404).json({
+                ok: false,
+                data: null,
+                message: 'Establecimiento no encontrado o no se pudo eliminar'
+            });
+        }
+        
+        return res.status(200).json({
+            ok: true,
+            data: null,
+            message: 'Establecimiento eliminado permanentemente'
+        });
+    } catch (error) {
+        console.error('Error al eliminar permanentemente establecimiento:', error);
+        return res.status(500).json({
+            ok: false,
+            data: null,
+            message: 'Error interno del servidor'
+        });
+    }
+}
 
 export const createUser = async (req: Request, res: Response) => {
     try {
@@ -28,19 +276,10 @@ export const createUser = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
     try {
-        const {producto, preguntas} = req.body;
+        const { producto } = req.body;
 
         const new_product = await create_producto(producto);
 
-        if (!new_product) {
-            return res.status(400).json({message: 'Error creating product'});
-        }
-        if (preguntas && preguntas.length > 0) {
-            const new_preguntas = await create_pregunta_producto(preguntas, new_product);
-            if (!new_preguntas) {
-                return res.status(400).json({message: 'Error creating product questions'});
-            }
-        }
         return res.status(201).json({
             ok: true,
             data: new_product,
@@ -56,27 +295,7 @@ export const createProduct = async (req: Request, res: Response) => {
     }
 }
 
-export const createEstablecimineto = async (req: Request, res: Response) => {
-    try {
-        const {establecimiento} = req.body;
-        const new_establecimiento = await create_establecimiento(establecimiento);
-        if (!new_establecimiento) {
-            return res.status(400).json({message: 'Error creating establishment'});
-        }
-        return res.status(201).json({
-            ok: true,
-            data: new_establecimiento,
-            message: 'Establecimineto created successfully',
-        });
-    } catch (error) {
-        console.error('Error creating establecimiento:', error);
-        return res.status(500).json({
-            ok: false,
-            data: null,
-            message: 'Internal server error'
-        });
-    }
-}
+
 
 export const createTicket = async (req: Request, res: Response) => {
     try {
