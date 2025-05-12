@@ -4,13 +4,26 @@ import {
     getEstablecimiento, 
     getAllEstablecimientos, 
     updateEstablecimiento, 
-    deleteEstablecimiento 
+    deleteEstablecimiento,
+
+    registerUser,
+    loginUser,
+    updateUser,
+    getUser,
+    getAllUsers,
+    deleteUser
 } from './controller.admin';
 import { authMiddleware } from '@/core/middleware/auth.middleware';
 
 const adminRouter: Router = express.Router();
 
 // Usuarios 👤
+adminRouter.post('/register-user', (req, res) => {registerUser(req, res)});
+adminRouter.post('/login-user', (req, res) => {loginUser(req, res)});
+adminRouter.get('/get-user/:id', authMiddleware, (req, res) => {getUser(req, res)});
+adminRouter.get('/get-all-users', authMiddleware, (req, res) => {getAllUsers(req, res)});
+adminRouter.put('/update-user/:id', authMiddleware, (req, res) => {updateUser(req, res)});
+adminRouter.delete('/delete-user/:id', authMiddleware, (req, res) => {deleteUser(req, res)});
 
 
 // Establecimientos 🏪

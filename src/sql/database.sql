@@ -1,11 +1,14 @@
 USE test_db;
 
-DROP TABLE establecimientos;
+DROP TABLE usuarios;
 
 CREATE TABLE usuarios(
 id_usuario INT(11) UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY,
 vc_username VARCHAR(60),
-vc_password VARCHAR(60)
+vc_password VARCHAR(60),
+dt_registro INT UNSIGNED DEFAULT 0,
+dt_actualizacion INT UNSIGNED DEFAULT 0,
+b_estatus BOOLEAN DEFAULT 1
 );
 
 CREATE TABLE promotores(
