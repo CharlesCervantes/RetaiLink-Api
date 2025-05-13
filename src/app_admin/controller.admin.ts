@@ -15,9 +15,10 @@ import {
     get_all_users,
     update_user,
     delete_user,
+    get_user_by_username
 } from '@/core/usuarios';
 
-import { compare_password } from '@/core/utils';
+import { compare_password, generate_token, TokenPayload } from '@/core/utils';
 
 // Crear un nuevo establecimiento
 export const createEstablecimiento = async (req: Request, res: Response) => {
@@ -295,29 +296,45 @@ export const registerUser = async (req: Request, res: Response) => {
 export const loginUser = async (req: Request, res: Response) => {
     try {
         const {vc_username, vc_password} = req.body;
+        
         if (!vc_username || !vc_password) {
             throw new Error('Username and password are required');
         }
+        
         const user = {
             vc_username,
             vc_password
         };
-
+        
         // Check if the user exists
-        const existingUser = await get_user(user.vc_username);
+        const existingUser = await get_user_by_username(user.vc_username);
         if (!existingUser) {
-           throw new Error('User does not exist');
+            throw new Error('User does not exist');
         }
-
+        
         // Check if the password is correct
         const isPasswordValid = await compare_password(user.vc_password, existingUser.vc_password);
         if (!isPasswordValid) {
             throw new Error('Invalid password');
         }
-
+        
+        // Generar token JWT
+        const tokenPayload: TokenPayload = {
+            id: existingUser.id_usuario!,
+            vc_username: existingUser.vc_username
+        };
+        
+        const token = generate_token(tokenPayload);
+        
+        // Devolver usuario sin la contraseña y el token
+        const { vc_password: _, ...userWithoutPassword } = existingUser;
+        
         return res.status(200).json({
             ok: true,
-            data: existingUser,
+            data: {
+                user: userWithoutPassword,
+                token: `Bearer ${token}`,
+            },
             message: 'User logged in successfully',
         });
     } catch (error) {
@@ -325,10 +342,10 @@ export const loginUser = async (req: Request, res: Response) => {
         return res.status(500).json({
             ok: false,
             data: null,
-            message: error
+            message: error instanceof Error ? error.message : 'Unknown error'
         });
     }
-}
+};
 
 export const getUser = async (req: Request, res: Response) => {
     try {

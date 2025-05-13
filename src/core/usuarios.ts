@@ -57,6 +57,20 @@ export const get_all_users = async (): Promise<User[]> => {
     }
 };
 
+export const get_user_by_username = async (username: string): Promise<User | null> => {
+    try {
+        const [rows] = await pool.query<RowDataPacket[]>(
+            'SELECT id_usuario, vc_username, vc_password, dt_registro, dt_actualizacion FROM usuarios WHERE vc_username = ? AND b_estatus = 1 LIMIT 1;',
+            [username]
+        );
+        
+        return rows.length > 0 ? (rows[0] as User) : null;
+    } catch (error) {
+        console.error('Error al obtener usuario por nombre de usuario:', error);
+        throw error;
+    }
+};
+
 export const update_user = async (id_usuario: number, user: User): Promise<User | null> => {
     try {
         const { vc_username, vc_password } = user;
