@@ -12,20 +12,31 @@ export interface User {
     b_estatus?: boolean;
 }
 
-export const create_user = async (user: User): Promise<number> => {
+interface usuarios_negocios {
+    id_usuario_negocio?: number;
+    id_usuario: number;
+    id_negocio: number;
+    dt_registro?: number;
+    dt_actualizacion?: number;
+    b_estatus?: boolean;
+}
+
+import { PoolConnection } from 'mysql2/promise';
+
+export const create_user = async (user: User, connection: PoolConnection): Promise<number> => {
     try {
-        const epochTime = Math.floor(Date.now() / 1000);        
+        const epochTime = Math.floor(Date.now() / 1000);
         const { vc_username, vc_password } = user;
         const hashedPassword = await hash_password(vc_password);
-        
-        const [result] = await pool.query<ResultSetHeader>(
+
+        const [result] = await connection.query<ResultSetHeader>(
             'INSERT INTO usuarios (vc_username, vc_password, dt_registro, dt_actualizacion) VALUES (?, ?, ?, ?);',
             [vc_username, hashedPassword, epochTime, epochTime]
         );
-        
+
         return result.insertId;
     } catch (error) {
-        console.error('Error al crear usuario admin:', error);
+        console.error('Error al crear usuario:', error);
         throw error;
     }
 };
@@ -125,6 +136,21 @@ export const hard_delete_user = async (id_usuario: number): Promise<void> => {
         );
     } catch (error) {
         console.error('Error al eliminar usuario admin:', error);
+        throw error;
+    }
+};
+
+export const create_usuario_negocio = async (usuario_negocio: usuarios_negocios, connection: PoolConnection): Promise<void> => {
+    try {
+        const epochTime = Math.floor(Date.now() / 1000);
+        const { id_usuario, id_negocio } = usuario_negocio;
+
+        await connection.query<ResultSetHeader>(
+            'INSERT INTO usuarios_negocios (id_usuario, id_negocio, dt_registro, dt_actualizacion, b_estatus) VALUES (?, ?, ?, ?, 1);',
+            [id_usuario, id_negocio, epochTime, epochTime]
+        );
+    } catch (error) {
+        console.error('Error al crear relación usuario-negocio:', error);
         throw error;
     }
 };

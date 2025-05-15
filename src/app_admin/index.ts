@@ -1,5 +1,5 @@
 import express, {Router} from 'express';
-import { 
+import {
     createEstablecimiento, 
     getEstablecimiento, 
     getAllEstablecimientos, 
@@ -11,11 +11,25 @@ import {
     updateUser,
     getUser,
     getAllUsers,
-    deleteUser
+    deleteUser,
+
+    createNegocio,
+    getNegocio,
+    getAllNegocios,
+    updateNegocio,
+    deleteNegocio,
 } from './controller.admin';
 import { authMiddleware } from '@/core/middleware/auth.middleware';
 
 const adminRouter: Router = express.Router();
+
+// Negocio 🏪
+adminRouter.post('/create-negocio', (req, res) => {createNegocio(req, res)});
+adminRouter.get('/get-negocio/:id', (req, res) => {getNegocio(req, res)});
+adminRouter.get('/get-all-negocios', (req, res) => {getAllNegocios(req, res)});
+adminRouter.put('/update-negocio/:id', (req, res) => {updateNegocio(req, res)});
+adminRouter.delete('/delete-negocio/:id', (req, res) => {deleteNegocio(req, res)});
+
 
 // Usuarios 👤
 adminRouter.post('/register-user', (req, res) => {registerUser(req, res)});

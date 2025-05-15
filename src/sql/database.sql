@@ -2,12 +2,29 @@ USE test_db;
 
 DROP TABLE usuarios;
 
+CREATE TABLE negocios(
+    id_negocio INT(11) UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY,
+    vc_nombre VARCHAR(60) NOT NULL,
+    dt_registro INT(11) UNSIGNED DEFAULT 0,
+    dt_actualizacion INT(11) UNSIGNED DEFAULT 0,
+    b_estatus BOOLEAN DEFAULT 1
+);
+
 CREATE TABLE usuarios(
 id_usuario INT(11) UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY,
 vc_username VARCHAR(60),
 vc_password VARCHAR(60),
 dt_registro INT UNSIGNED DEFAULT 0,
 dt_actualizacion INT UNSIGNED DEFAULT 0,
+b_estatus BOOLEAN DEFAULT 1
+);
+
+CREATE TABLE usuarios_negocios(
+id_usuario_negocio INT(11) UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY,
+id_usuario INT(11) UNSIGNED NOT NULL,
+id_negocio INT(11) UNSIGNED NOT NULL,
+dt_registro INT(11) UNSIGNED DEFAULT 0,
+dt_actualizacion INT(11) UNSIGNED DEFAULT 0,
 b_estatus BOOLEAN DEFAULT 1
 );
 

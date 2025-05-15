@@ -15,10 +15,22 @@ import {
     get_all_users,
     update_user,
     delete_user,
-    get_user_by_username
+    get_user_by_username,
+    create_usuario_negocio,
+
 } from '@/core/usuarios';
 
+import {
+    create_negocio,
+    get_negocio,
+    get_all_negocios,
+    update_negocio,
+} from '@/core/negocios';
+
 import { compare_password, generate_token, TokenPayload } from '@/core/utils';
+import pool from '@/config/database';
+
+
 
 // Crear un nuevo establecimiento
 export const createEstablecimiento = async (req: Request, res: Response) => {
@@ -261,6 +273,7 @@ export const hardDeleteEstablecimiento = async (req: Request, res: Response) => 
 }
 
 export const registerUser = async (req: Request, res: Response) => {
+    const connection = await pool.getConnection(); // Obtener conexión para la transacción
     try {
         const {vc_username, vc_password} = req.body;
         if (!vc_username || !vc_password) {
@@ -277,7 +290,14 @@ export const registerUser = async (req: Request, res: Response) => {
            throw new Error('User already exists');
         }
 
-        const userId = await create_user(user);
+        const userId = await create_user(user, connection);
+
+        if (!userId) {
+            throw new Error('Failed to create user');
+        }
+
+        // If a negocio ID is provided, associate the user with the negocio
+
         return res.status(201).json({
             ok: true,
             data: userId,
@@ -506,6 +526,242 @@ export const deleteUser = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Error al eliminar usuario:', error);
+        return res.status(500).json({
+            ok: false,
+            data: null,
+            message: 'Error interno del servidor'
+        });
+    }
+}
+
+
+// Crear un nuevo negocio
+export const createNegocio = async (req: Request, res: Response) => {
+    const connection = await pool.getConnection(); // Obtener conexión para la transacción
+    try {
+        const { negocio } = req.body;
+        
+        if (!negocio || !negocio.vc_nombre) {
+            return res.status(400).json({
+                ok: false,
+                data: null,
+                message: 'El nombre del negocio es requerido'
+            });
+        }
+
+        await connection.beginTransaction(); // Iniciar transacción
+
+        // Verificar si el negocio ya existe
+        const existingNegocio = await get_negocio(negocio.vc_nombre);
+        if (existingNegocio) {
+            return res.status(409).json({
+                ok: false,
+                data: null,
+                message: 'El negocio ya existe'
+            });
+        }
+        
+        const new_negocio_id = await create_negocio(negocio, connection);
+
+        const defaultUsername = `${negocio.vc_nombre.toLowerCase().replace(/\s+/g, '')}@default.com`;
+        const defaultPassword = 'defaultPassword123'; // Cambiar por una contraseña segura
+        const user = {
+            vc_username: defaultUsername,
+            vc_password: defaultPassword
+        };
+        const new_user_id = await create_user(user, connection);
+
+        // Crear relación usuario-negocio
+        const usuario_negocio = {
+            id_usuario: new_user_id,
+            id_negocio: new_negocio_id
+        };
+        await create_usuario_negocio(usuario_negocio, connection);
+
+        // Confirmar transacción
+        await connection.commit();
+        
+        return res.status(201).json({
+            ok: true,
+            data: { id: new_negocio_id },
+            message: 'Negocio creado exitosamente'
+        });
+    } catch (error) {
+        console.error('Error al crear negocio:', error);
+
+        // Revertir transacción en caso de error
+        await connection.rollback();
+
+        return res.status(500).json({
+            ok: false,
+            data: null,
+            message: 'Error interno del servidor'
+        });
+    } finally {
+        connection.release(); // Liberar conexión
+    }
+}
+
+// Obtener un negocio por ID
+export const getNegocio = async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id);
+        
+        if (isNaN(id)) {
+            return res.status(400).json({
+                ok: false,
+                data: null,
+                message: 'ID de negocio inválido'
+            });
+        }
+        
+        const negocio = await get_negocio(id);
+        
+        if (!negocio) {
+            return res.status(404).json({
+                ok: false,
+                data: null,
+                message: 'Negocio no encontrado'
+            });
+        }
+        
+        return res.status(200).json({
+            ok: true,
+            data: negocio,
+            message: 'Negocio obtenido exitosamente'
+        });
+    } catch (error) {
+        console.error('Error al obtener negocio:', error);
+        return res.status(500).json({
+            ok: false,
+            data: null,
+            message: 'Error interno del servidor'
+        });
+    }
+}
+
+// Obtener todos los negocios
+export const getAllNegocios = async (_req: Request, res: Response) => {
+    try {
+        const negocios = await get_all_negocios();
+        
+        return res.status(200).json({
+            ok: true,
+            data: negocios,
+            message: 'Negocios obtenidos exitosamente'
+        });
+    } catch (error) {
+        console.error('Error al obtener negocios:', error);
+        return res.status(500).json({
+            ok: false,
+            data: null,
+            message: 'Error interno del servidor'
+        });
+    }
+}
+
+// Actualizar un negocio
+export const updateNegocio = async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id);
+        const { negocio } = req.body;
+        
+        if (isNaN(id)) {
+            return res.status(400).json({
+                ok: false,
+                data: null,
+                message: 'ID de negocio inválido'
+            });
+        }
+        
+        if (!negocio) {
+            return res.status(400).json({
+                ok: false,
+                data: null,
+                message: 'Datos del negocio requeridos'
+            });
+        }
+        
+        // Verificar si el negocio existe
+        const existing = await get_negocio(id);
+        
+        if (!existing) {
+            return res.status(404).json({
+                ok: false,
+                data: null,
+                message: 'Negocio no encontrado'
+            });
+        }
+        
+        const updated = await update_negocio(id, negocio);
+        
+        if (!updated) {
+            return res.status(400).json({
+                ok: false,
+                data: null,
+                message: 'No se pudo actualizar el negocio'
+            });
+        }
+        
+        // Obtener el negocio actualizado
+        const updatedNegocio = await get_negocio(id);
+        
+        return res.status(200).json({
+            ok: true,
+            data: updatedNegocio,
+            message: 'Negocio actualizado exitosamente'
+        });
+    } catch (error) {
+        console.error('Error al actualizar negocio:', error);
+        return res.status(500).json({
+            ok: false,
+            data: null,
+            message: 'Error interno del servidor'
+        });
+    }
+}
+
+// Eliminar un negocio (eliminación lógica)
+export const deleteNegocio = async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id);
+        
+        if (isNaN(id)) {
+            return res.status(400).json({
+                ok: false,
+                data: null,
+                message: 'ID de negocio inválido'
+            });
+        }
+        
+        // Verificar si el negocio existe
+        const existing = await get_negocio(id);
+        
+        if (!existing) {
+            return res.status(404).json({
+                ok: false,
+                data: null,
+                message: 'Negocio no encontrado'
+            });
+        }
+        
+        const deleted = await delete_establecimiento(id);
+        
+        if (!deleted) {
+            return res.status(400).json({
+                ok: false,
+                data: null,
+                message: 'No se pudo eliminar el negocio'
+            });
+        }
+        
+        return res.status(200).json({
+            ok: true,
+            data: null,
+            message: 'Negocio eliminado exitosamente'
+        });
+    } catch (error) {
+        console.error('Error al eliminar negocio:', error);
         return res.status(500).json({
             ok: false,
             data: null,
