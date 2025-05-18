@@ -6,7 +6,9 @@ import {
     update_establecimiento, 
     delete_establecimiento, 
     hard_delete_establecimiento,
-    search_establecimientos
+    search_establecimientos,
+    conectar_establecimineto_negocio,
+    desconectar_establecimiento_negocio
 } from '@/core/establecimientos';
 
 import {
@@ -762,6 +764,76 @@ export const deleteNegocio = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Error al eliminar negocio:', error);
+        return res.status(500).json({
+            ok: false,
+            data: null,
+            message: 'Error interno del servidor'
+        });
+    }
+}
+
+export const conectarEstablecimientoNegocio = async (req: Request, res: Response) => {
+    const connection = await pool.getConnection(); // Obtener conexión para la transacción
+    try {
+        const { id_establecimiento, id_negocio } = req.body;
+        
+        if (!id_establecimiento || !id_negocio) {
+            return res.status(400).json({
+                ok: false,
+                data: null,
+                message: 'ID de establecimiento y negocio son requeridos'
+            });
+        }
+
+        // Crear la relación entre el establecimiento y el negocio
+        const newEstablecimientoNegocioId = await conectar_establecimineto_negocio(id_establecimiento, id_negocio, connection);
+        
+        return res.status(201).json({
+            ok: true,
+            data: { id: newEstablecimientoNegocioId },
+            message: 'Relación entre establecimiento y negocio creada exitosamente'
+        });
+    } catch (error) {
+        console.error('Error al conectar establecimiento y negocio:', error);
+        return res.status(500).json({
+            ok: false,
+            data: null,
+            message: 'Error interno del servidor'
+        });
+    }
+}
+
+export const desconectarEstablecimientoNegocio = async (req: Request, res: Response) => {
+    const connection = await pool.getConnection(); // Obtener conexión para la transacción
+    try {
+        const { id_establecimiento, id_negocio } = req.body;
+        
+        if (!id_establecimiento || !id_negocio) {
+            return res.status(400).json({
+                ok: false,
+                data: null,
+                message: 'ID de establecimiento y negocio son requeridos'
+            });
+        }
+
+        // Desconectar el establecimiento del negocio
+        const disconnected = await desconectar_establecimiento_negocio(id_establecimiento, id_negocio, connection);
+        
+        if (!disconnected) {
+            return res.status(400).json({
+                ok: false,
+                data: null,
+                message: 'No se pudo desconectar el establecimiento del negocio'
+            });
+        }
+        
+        return res.status(200).json({
+            ok: true,
+            data: null,
+            message: 'Establecimiento desconectado del negocio exitosamente'
+        });
+    } catch (error) {
+        console.error('Error al desconectar establecimiento y negocio:', error);
         return res.status(500).json({
             ok: false,
             data: null,

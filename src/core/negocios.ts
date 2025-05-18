@@ -1,23 +1,19 @@
 import pool from '@/config/database';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
+import { PoolConnection } from 'mysql2/promise';
+import { Negocio } from '@/core/interfaces';
 
-interface Negocio {
-    id_negocio?: number;
-    vc_nombre: string;
-    dt_registro?: number;
-    dt_actualizacion?: number;
-    b_estatus?: boolean;
-}
 
-export const create_negocio = async (negocio: Negocio, connection: any): Promise<number> => {
+export const create_negocio = async (negocio: Negocio, connection: PoolConnection): Promise<number> => {
     try {
         const epochTime = Math.floor(Date.now() / 1000);
         const { vc_nombre } = negocio;
 
-        const [result] = await connection.query(
+        const [queryResult] = await connection.query(
             'INSERT INTO negocios (vc_nombre, dt_registro, dt_actualizacion) VALUES (?, ?, ?);',
             [vc_nombre, epochTime, epochTime]
-        ) as [ResultSetHeader];
+        );
+        const result = queryResult as ResultSetHeader;
 
         return result.insertId;
     } catch (error) {

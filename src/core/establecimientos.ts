@@ -1,17 +1,6 @@
 import pool from '@/config/database';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
-
-export interface Establecimiento {
-    id_establecimiento?: number;
-    vc_nombre: string;
-    vc_direccion?: string;
-    vc_num_economico?: string; // numero de serie o identificador del establecimiento
-    vc_telefono?: string;
-    vc_marca?: string; // marca del establecimiento
-    b_estatus?: boolean; // estado del establecimiento
-    dt_registro?: number; // fecha de registro
-    dt_actualizacion?: number; // fecha de actualizacion
-}
+import { Establecimiento } from '@/core/interfaces';
 
 // CREATE - Crear un nuevo establecimiento
 export const create_establecimiento = async (establecimiento: Establecimiento): Promise<number> => {
@@ -155,6 +144,35 @@ export const search_establecimientos = async (searchTerm: string): Promise<Estab
         return rows as Establecimiento[];
     } catch (error) {
         console.error('Error al buscar establecimientos:', error);
+        throw error;
+    }
+}
+
+export const conectar_establecimineto_negocio = async (id_establecimiento: number, id_negocio: number, connection:any ): Promise<number> => {
+    try {
+        const timestamp = Math.floor(Date.now() / 1000);
+        const [result] = await connection.promise().query(
+            'INSERT INTO establecimiento_negocio (id_establecimiento, id_negocio, dt_registro, dt_actualizacion) VALUES (?, ?, ?, ?);',
+            [id_establecimiento, id_negocio, timestamp, timestamp]
+        );
+
+        return result.insertId;
+    } catch (error) {
+        console.error('Error al conectar establecimiento y negocio:', error);
+        throw error;
+    }
+} 
+
+export const desconectar_establecimiento_negocio = async (id_establecimiento: number, id_negocio: number, connection:any ): Promise<boolean> => {
+    try {
+        const [result] = await connection.promise().query(
+            'DELETE FROM establecimiento_negocio WHERE id_establecimiento = ? AND id_negocio = ?;',
+            [id_establecimiento, id_negocio]
+        );
+
+        return result.affectedRows > 0;
+    } catch (error) {
+        console.error('Error al desconectar establecimiento y negocio:', error);
         throw error;
     }
 }

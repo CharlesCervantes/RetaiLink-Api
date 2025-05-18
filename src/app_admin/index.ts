@@ -5,6 +5,8 @@ import {
     getAllEstablecimientos, 
     updateEstablecimiento, 
     deleteEstablecimiento,
+    conectarEstablecimientoNegocio,
+    desconectarEstablecimientoNegocio,
 
     registerUser,
     loginUser,
@@ -46,6 +48,8 @@ adminRouter.get('/get-establecimiento/:id', authMiddleware, (req, res) => {getEs
 adminRouter.get('/get-all-establecimientos', authMiddleware, (req, res) => {getAllEstablecimientos(req, res)});
 adminRouter.put('/update-establecimiento/:id', authMiddleware, (req, res) => {updateEstablecimiento(req, res)});
 adminRouter.delete('/delete-establecimiento/:id', authMiddleware, (req, res) => {deleteEstablecimiento(req, res)});
+adminRouter.post('/conectar-establecimiento-negocio', authMiddleware, (req, res) => {conectarEstablecimientoNegocio(req, res)});
+adminRouter.post('/desconectar-establecimiento-negocio', authMiddleware, (req, res) => {desconectarEstablecimientoNegocio(req, res)});
 
 // adminRouter.post('/create-user', (req, res) => {createUser(req, res)});
 

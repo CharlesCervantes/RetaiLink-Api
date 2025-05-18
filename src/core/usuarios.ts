@@ -1,26 +1,7 @@
 import pool from '@/config/database';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { hash_password } from '@/core/utils';
-
-
-export interface User {
-    id_usuario?: number;
-    vc_username: string;
-    vc_password: string;
-    dt_registro?: number;
-    dt_actualizacion?: number;
-    b_estatus?: boolean;
-}
-
-interface usuarios_negocios {
-    id_usuario_negocio?: number;
-    id_usuario: number;
-    id_negocio: number;
-    dt_registro?: number;
-    dt_actualizacion?: number;
-    b_estatus?: boolean;
-}
-
+import { User, usuarios_negocios } from '@/core/interfaces';
 import { PoolConnection } from 'mysql2/promise';
 
 export const create_user = async (user: User, connection: PoolConnection): Promise<number> => {
