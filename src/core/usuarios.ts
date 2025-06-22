@@ -1,7 +1,7 @@
-import pool from '@/config/database';
+import pool from '../config/database';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
-import { hash_password } from '@/core/utils';
-import { User, usuarios_negocios } from '@/core/interfaces';
+import { hash_password } from '../core/utils';
+import { User, usuarios_negocios } from '../core/interfaces';
 import { PoolConnection } from 'mysql2/promise';
 
 export const create_user = async (user: User, connection: PoolConnection): Promise<number> => {

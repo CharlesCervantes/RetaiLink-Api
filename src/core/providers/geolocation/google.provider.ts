@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { GeoProvider } from '@/core/interfaces';
+import { GeoProvider } from '../../../core/interfaces';
 
 export class GoogleProvider implements GeoProvider {
   constructor(private apiKey: string) {}

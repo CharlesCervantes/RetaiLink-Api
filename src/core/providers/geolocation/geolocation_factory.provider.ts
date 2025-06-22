@@ -1,7 +1,7 @@
-import { GeoProvider } from '@/core/interfaces';
-import { GoogleProvider } from '@/core/providers/geolocation/google.provider';
-import { NominatimProvider } from '@/core/providers/geolocation/nominatim.provider';
-import { MapboxProvider } from '@/core/providers/geolocation/mapbox.provider';
+import { GeoProvider } from '../../../core/interfaces';
+import { GoogleProvider } from '../../../core/providers/geolocation/google.provider';
+import { NominatimProvider } from '../../../core/providers/geolocation/nominatim.provider';
+import { MapboxProvider } from '../../../core/providers/geolocation/mapbox.provider';
 
 export type ProviderType = 'google' | 'nominatim' | 'mapbox';
 

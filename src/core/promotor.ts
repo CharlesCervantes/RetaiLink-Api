@@ -1,6 +1,6 @@
-import pool from '@/config/database';
+import pool from '../config/database';
 import { ResultSetHeader } from 'mysql2';
-import { hash_password, compare_password } from '@/core/utils';
+import { hash_password, compare_password } from '../core/utils';
 
 //TODO: las fechas se formaran en UNIX_TIMESTAMP, por lo que se guardaran como enteros
 export interface Promotor {

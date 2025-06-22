@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { GeoProvider } from '@/core/interfaces';
+import { GeoProvider } from '../../../core/interfaces';
 
 export class NominatimProvider implements GeoProvider {
   async getCoordinates(address: string): Promise<{ lat: number; lng: number }> {

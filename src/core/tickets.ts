@@ -1,4 +1,4 @@
-import pool from '@/config/database';
+import pool from '../config/database';
 import { ResultSetHeader } from 'mysql2';
 
 export interface Ticket {

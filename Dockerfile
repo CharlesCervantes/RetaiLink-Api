@@ -1,42 +1,36 @@
-# Primera etapa: Construcción
-FROM node:23-alpine AS builder
+# Stage 1: Build the application
+FROM node:24-alpine AS build
 
-# Establecemos el directorio de trabajo
 WORKDIR /app
 
-# Copiamos package.json y package-lock.json
+# Copy package.json and package-lock.json (or yarn.lock)
 COPY package*.json ./
 
-# Instalamos todas las dependencias necesarias para la compilación
-RUN npm ci
+# Install development and production dependencies
+# This is necessary because the 'build' script might need dev dependencies (like TypeScript, rimraf)
+RUN npm install
 
-# Copiamos el código fuente
-COPY tsconfig.json ./
-COPY src/ ./src/
+# Copy all source code
+COPY . .
 
-# Compilamos TypeScript a JavaScript
+# Run the build script
+# This will compile your TypeScript code into JavaScript in the 'dist' directory
 RUN npm run build
 
-# Segunda etapa: Producción
-FROM node:23-alpine AS production
+# Stage 2: Create the final production image
+FROM node:24-alpine AS production
 
-# Establecemos variables de entorno para producción
-ENV NODE_ENV=production
-
-# Establecemos el directorio de trabajo  
 WORKDIR /app
 
-# Copiamos package.json y package-lock.json
-COPY package*.json ./
+# Copy package.json and package-lock.json from the build stage
+COPY --from=build /app/package*.json ./
 
-# Instalamos solo dependencias de producción (sin devDependencies)
-RUN npm ci --only=production
+# Install only production dependencies for the final image
+RUN npm install --only=production
 
-# Copiamos los archivos compilados de la etapa de construcción
-COPY --from=builder /app/dist ./dist
+# Copy the built application from the build stage
+COPY --from=build /app/dist ./dist
 
-# Exponemos el puerto en el que se ejecuta la aplicación
 EXPOSE 3000
 
-# Comando para ejecutar la aplicación
 CMD ["node", "dist/index.js"]

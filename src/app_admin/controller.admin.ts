@@ -9,7 +9,7 @@ import {
     search_establecimientos,
     conectar_establecimineto_negocio,
     desconectar_establecimiento_negocio
-} from '@/core/establecimientos';
+} from '../core/establecimientos';
 
 import {
     create_user,
@@ -20,17 +20,17 @@ import {
     get_user_by_username,
     create_usuario_negocio,
 
-} from '@/core/usuarios';
+} from '../core/usuarios';
 
 import {
     create_negocio,
     get_negocio,
     get_all_negocios,
     update_negocio,
-} from '@/core/negocios';
+} from '../core/negocios';
 
-import { compare_password, generate_token, TokenPayload } from '@/core/utils';
-import pool from '@/config/database';
+import { compare_password, generate_token, TokenPayload } from '../core/utils';
+import pool from '../config/database';
 
 
 

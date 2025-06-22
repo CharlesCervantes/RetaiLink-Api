@@ -21,7 +21,7 @@ import {
     updateNegocio,
     deleteNegocio,
 } from './controller.admin';
-import { authMiddleware } from '@/core/middleware/auth.middleware';
+import { authMiddleware } from '../core/middleware/auth.middleware';
 
 const adminRouter: Router = express.Router();
 

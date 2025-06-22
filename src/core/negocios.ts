@@ -1,7 +1,7 @@
-import pool from '@/config/database';
+import pool from '../config/database';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { PoolConnection } from 'mysql2/promise';
-import { Negocio } from '@/core/interfaces';
+import { Negocio } from '../core/interfaces';
 
 
 export const create_negocio = async (negocio: Negocio, connection: PoolConnection): Promise<number> => {

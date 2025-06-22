@@ -1,6 +1,6 @@
 import {Request, Response} from 'express'
-import {create_promotor, verify_promotor, obtener_detalles_promotor} from '@/core/promotor'
-import {generate_token} from '@/core/utils'
+import {create_promotor, verify_promotor, obtener_detalles_promotor} from '../core/promotor'
+import {generate_token} from '../core/utils'
 
 export const crear_promotor = async (req: Request, res: Response) => {
     try {

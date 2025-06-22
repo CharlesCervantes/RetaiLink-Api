@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { verify_token, TokenPayload } from '@/core/utils';
+import { verify_token, TokenPayload } from '../../core/utils';
 
 declare global {
     namespace Express {

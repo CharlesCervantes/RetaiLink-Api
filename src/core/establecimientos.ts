@@ -1,6 +1,6 @@
-import pool from '@/config/database';
+import pool from '../config/database';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
-import { Establecimiento } from '@/core/interfaces';
+import { Establecimiento } from '../core/interfaces';
 
 // CREATE - Crear un nuevo establecimiento
 export const create_establecimiento = async (establecimiento: Establecimiento): Promise<number> => {
