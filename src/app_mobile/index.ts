@@ -1,5 +1,5 @@
 import express, {Router} from 'express';
-import { crear_promotor, login_promotor } from './controller.mobile';
+import { crear_promotor, login_promotor } from './promotor.mobile.controller';
 
 const promotorRouter: Router = express.Router();
 

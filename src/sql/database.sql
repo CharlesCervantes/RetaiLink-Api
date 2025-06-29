@@ -9,3 +9,14 @@ CREATE TABLE Usuarios (
   dt_registro INT(11) UNSIGNED NOT NULL DEFAULT 0,
   dt_actualizacion INT(11) UNSIGNED NOT NULL DEFAULT 0
 );
+
+CREATE TABLE Promotores (
+  id_promotor INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  vc_username VARCHAR(255) NOT NULL,
+  vc_password VARCHAR(255) NOT NULL,
+  vc_nombre VARCHAR(255) NOT NULL,
+  dt_fecha_nacimiento INT(11) UNSIGNED NOT NULL DEFAULT 0,
+  b_activo BOOLEAN NOT NULL DEFAULT TRUE,
+  dt_registro INT(11) UNSIGNED NOT NULL DEFAULT 0,
+  dt_actualizacion INT(11) UNSIGNED NOT NULL DEFAULT 0
+);
