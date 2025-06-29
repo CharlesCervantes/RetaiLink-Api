@@ -7,20 +7,22 @@ import {
     deleteEstablecimiento,
     conectarEstablecimientoNegocio,
     desconectarEstablecimientoNegocio,
-
-    registerUser,
-    loginUser,
-    updateUser,
-    getUser,
-    getAllUsers,
-    deleteUser,
-
     createNegocio,
     getNegocio,
     getAllNegocios,
     updateNegocio,
     deleteNegocio,
 } from './controller.admin';
+
+import {
+    actualizar_usuario,
+    eliminar_usuario,
+    login_usuario,
+    obtener_lista_usuarios,
+    obtener_usuario,
+    registrar_usuario
+} from './usuarios.admin.controller';
+
 import { authMiddleware } from '../core/middleware/auth.middleware';
 
 const adminRouter: Router = express.Router();
@@ -34,12 +36,12 @@ adminRouter.delete('/delete-negocio/:id', (req, res) => {deleteNegocio(req, res)
 
 
 // Usuarios 👤
-adminRouter.post('/register-user', (req, res) => {registerUser(req, res)});
-adminRouter.post('/login-user', (req, res) => {loginUser(req, res)});
-adminRouter.get('/get-user/:id', authMiddleware, (req, res) => {getUser(req, res)});
-adminRouter.get('/get-all-users', authMiddleware, (req, res) => {getAllUsers(req, res)});
-adminRouter.put('/update-user/:id', authMiddleware, (req, res) => {updateUser(req, res)});
-adminRouter.delete('/delete-user/:id', authMiddleware, (req, res) => {deleteUser(req, res)});
+adminRouter.post('/register-user', (req, res) => {registrar_usuario(req, res)});
+adminRouter.post('/login-user', (req, res) => {login_usuario(req, res)});
+adminRouter.get('/get-user/:id', authMiddleware, (req, res) => {obtener_usuario(req, res)});
+adminRouter.get('/get-all-users', authMiddleware, (req, res) => {obtener_lista_usuarios(req, res)});
+adminRouter.put('/update-user/:id', authMiddleware, (req, res) => {actualizar_usuario(req, res)});
+adminRouter.delete('/delete-user/:id', authMiddleware, (req, res) => {eliminar_usuario(req, res)});
 
 
 // Establecimientos 🏪

@@ -13,13 +13,7 @@ import {
 
 import {
     create_user,
-    get_user,
-    get_all_users,
-    update_user,
-    delete_user,
-    get_user_by_username,
     create_usuario_negocio,
-
 } from '../core/usuarios';
 
 import {
@@ -29,7 +23,6 @@ import {
     update_negocio,
 } from '../core/negocios';
 
-import { compare_password, generate_token, TokenPayload } from '../core/utils';
 import pool from '../config/database';
 
 
@@ -274,268 +267,6 @@ export const hardDeleteEstablecimiento = async (req: Request, res: Response) => 
     }
 }
 
-export const registerUser = async (req: Request, res: Response) => {
-    const connection = await pool.getConnection(); // Obtener conexión para la transacción
-    try {
-        const {vc_username, vc_password} = req.body;
-        if (!vc_username || !vc_password) {
-            throw new Error('Username and password are required');
-        }
-        const user = {
-            vc_username,
-            vc_password
-        };
-
-        // Check if the user already exists
-        const existingUser = await get_user(user.vc_username);
-        if (existingUser) {
-           throw new Error('User already exists');
-        }
-
-        const userId = await create_user(user, connection);
-
-        if (!userId) {
-            throw new Error('Failed to create user');
-        }
-
-        // If a negocio ID is provided, associate the user with the negocio
-
-        return res.status(201).json({
-            ok: true,
-            data: userId,
-            message: 'User created successfully',
-        });
-    } catch (error) {
-        console.error('Error creating user:', error);
-        return res.status(500).json({
-            ok: false,
-            data: null,
-            message: error
-        });
-    }
-}
-
-export const loginUser = async (req: Request, res: Response) => {
-    try {
-        const {vc_username, vc_password} = req.body;
-        
-        if (!vc_username || !vc_password) {
-            throw new Error('Username and password are required');
-        }
-        
-        const user = {
-            vc_username,
-            vc_password
-        };
-        
-        // Check if the user exists
-        const existingUser = await get_user_by_username(user.vc_username);
-        if (!existingUser) {
-            throw new Error('User does not exist');
-        }
-        
-        // Check if the password is correct
-        const isPasswordValid = await compare_password(user.vc_password, existingUser.vc_password);
-        if (!isPasswordValid) {
-            throw new Error('Invalid password');
-        }
-        
-        // Generar token JWT
-        const tokenPayload: TokenPayload = {
-            id: existingUser.id_usuario!,
-            vc_username: existingUser.vc_username
-        };
-        
-        const token = generate_token(tokenPayload);
-        
-        // Devolver usuario sin la contraseña y el token
-        const { vc_password: _, ...userWithoutPassword } = existingUser;
-        
-        return res.status(200).json({
-            ok: true,
-            data: {
-                user: userWithoutPassword,
-                token: `Bearer ${token}`,
-            },
-            message: 'User logged in successfully',
-        });
-    } catch (error) {
-        console.error('Error logging in user:', error);
-        return res.status(500).json({
-            ok: false,
-            data: null,
-            message: error instanceof Error ? error.message : 'Unknown error'
-        });
-    }
-};
-
-export const getUser = async (req: Request, res: Response) => {
-    try {
-        const id = parseInt(req.params.id);
-        
-        if (isNaN(id)) {
-            return res.status(400).json({
-                ok: false,
-                data: null,
-                message: 'ID de usuario inválido'
-            });
-        }
-        
-        const user = await get_user(id);
-        
-        if (!user) {
-            return res.status(404).json({
-                ok: false,
-                data: null,
-                message: 'Usuario no encontrado'
-            });
-        }
-        
-        return res.status(200).json({
-            ok: true,
-            data: user,
-            message: 'Usuario obtenido exitosamente'
-        });
-    } catch (error) {
-        console.error('Error al obtener usuario:', error);
-        return res.status(500).json({
-            ok: false,
-            data: null,
-            message: 'Error interno del servidor'
-        });
-    }
-}
-
-// Obtener todos los usuarios
-export const getAllUsers = async (_req: Request, res: Response) => {
-    try {
-        const users = await get_all_users();
-        
-        return res.status(200).json({
-            ok: true,
-            data: users,
-            message: 'Usuarios obtenidos exitosamente'
-        });
-    } catch (error) {
-        console.error('Error al obtener usuarios:', error);
-        return res.status(500).json({
-            ok: false,
-            data: null,
-            message: 'Error interno del servidor'
-        });
-    }
-}
-
-// Actualizar un usuario
-export const updateUser = async (req: Request, res: Response) => {
-    try {
-        const id = parseInt(req.params.id);
-        const { user } = req.body;
-        
-        if (isNaN(id)) {
-            return res.status(400).json({
-                ok: false,
-                data: null,
-                message: 'ID de usuario inválido'
-            });
-        }
-        
-        if (!user) {
-            return res.status(400).json({
-                ok: false,
-                data: null,
-                message: 'Datos del usuario requeridos'
-            });
-        }
-        
-        // Verificar si el usuario existe
-        const existing = await get_user(id);
-        
-        if (!existing) {
-            return res.status(404).json({
-                ok: false,
-                data: null,
-                message: 'Usuario no encontrado'
-            });
-        }
-        
-        const updated = await update_user(id, user);
-        
-        if (!updated) {
-            return res.status(400).json({
-                ok: false,
-                data: null,
-                message: 'No se pudo actualizar el usuario'
-            });
-        }
-        
-        // Obtener el usuario actualizado
-        const updatedUser = await get_user(id);
-        
-        return res.status(200).json({
-            ok: true,
-            data: updatedUser,
-            message: 'Usuario actualizado exitosamente'
-        });
-    } catch (error) {
-        console.error('Error al actualizar usuario:', error);
-        return res.status(500).json({
-            ok: false,
-            data: null,
-            message: 'Error interno del servidor'
-        });
-    }
-}
-
-// Eliminar un usuario (eliminación lógica)
-export const deleteUser = async (req: Request, res: Response) => {
-    try {
-        const id = parseInt(req.params.id);
-        
-        if (isNaN(id)) {
-            return res.status(400).json({
-                ok: false,
-                data: null,
-                message: 'ID de usuario inválido'
-            });
-        }
-        
-        // Verificar si el usuario existe
-        const existing = await get_user(id);
-        
-        if (!existing) {
-            return res.status(404).json({
-                ok: false,
-                data: null,
-                message: 'Usuario no encontrado'
-            });
-        }
-        
-        const deleted = await delete_user(id);
-        
-        if (!deleted) {
-            return res.status(400).json({
-                ok: false,
-                data: null,
-                message: 'No se pudo eliminar el usuario'
-            });
-        }
-        
-        return res.status(200).json({
-            ok: true,
-            data: null,
-            message: 'Usuario eliminado exitosamente'
-        });
-    } catch (error) {
-        console.error('Error al eliminar usuario:', error);
-        return res.status(500).json({
-            ok: false,
-            data: null,
-            message: 'Error interno del servidor'
-        });
-    }
-}
-
 
 // Crear un nuevo negocio
 export const createNegocio = async (req: Request, res: Response) => {
@@ -569,7 +300,8 @@ export const createNegocio = async (req: Request, res: Response) => {
         const defaultPassword = 'defaultPassword123'; // Cambiar por una contraseña segura
         const user = {
             vc_username: defaultUsername,
-            vc_password: defaultPassword
+            vc_password: defaultPassword,
+            vc_nombre: negocio.vc_nombre,
         };
         const new_user_id = await create_user(user, connection);
 

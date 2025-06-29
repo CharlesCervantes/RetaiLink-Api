@@ -2,9 +2,10 @@ interface User {
     id_usuario?: number;
     vc_username: string;
     vc_password: string;
+    vc_nombre: string;
+    b_activo?: boolean;
     dt_registro?: number;
     dt_actualizacion?: number;
-    b_estatus?: boolean;
 }
 
 interface usuarios_negocios {
