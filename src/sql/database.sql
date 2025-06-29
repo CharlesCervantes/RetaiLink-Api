@@ -1,6 +1,6 @@
 USE railway;
 
-CREATE TABLE Usuarios (
+CREATE TABLE usuarios (
   id_usuario INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   vc_username VARCHAR(255) NOT NULL,
   vc_password VARCHAR(255) NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE Usuarios (
   dt_actualizacion INT(11) UNSIGNED NOT NULL DEFAULT 0
 );
 
-CREATE TABLE Promotores (
+CREATE TABLE promotores (
   id_promotor INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   vc_username VARCHAR(255) NOT NULL,
   vc_password VARCHAR(255) NOT NULL,

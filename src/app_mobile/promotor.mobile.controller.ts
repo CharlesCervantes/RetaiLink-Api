@@ -5,33 +5,57 @@ import pool from '../config/database';
 
 export const crear_promotor = async (req: Request, res: Response) => {
     const connection_db = await pool.getConnection();
-    await connection_db.beginTransaction(); // 🔸 Iniciar transacción
+    await connection_db.beginTransaction();
 
     try {
-        const {vc_username, vc_password, vc_nombre, dt_fecha_nacimiento } = req.body;
+        const { vc_username, vc_password, vc_nombre, dt_fecha_nacimiento } = req.body;
 
         if (!vc_username || !vc_password || !vc_nombre || !dt_fecha_nacimiento) {
-            return res.status(400).json({message: 'Todos los campos son obligatorios'});
+            return res.status(400).json({
+                ok: false,
+                message: 'Todos los campos son obligatorios'
+            });
         }
 
         const promotorId = await create_promotor(req.body, connection_db);
 
         if (!promotorId) {
-            await connection_db.rollback(); // 🔸 Revertir transacción en caso de error
-            return res.status(400).json({message: 'No se pudo crear el promotor'});
+            throw new Error('No se pudo crear el promotor');
         }
+
+        // Obtener promotor actualizado (si no tienes ya todos los campos)
+        const promotor = {
+            id: promotorId,
+            vc_username,
+            vc_nombre,
+            dt_fecha_nacimiento
+        };
+
+        const token = generate_token({
+            id: promotorId,
+            vc_username
+        });
+
+        await connection_db.commit();
 
         return res.status(201).json({
             ok: true,
-            data: promotorId,
-            message: 'Promotor created successfully',
+            message: 'Promotor creado y autenticado exitosamente',
+            token,
+            promotor
         });
+
     } catch (error) {
-        await connection_db.rollback(); // 🔴 Deshacer la transacción en caso de error
-        console.error('Error creating promotor:', error);
-        return res.status(500).json({message: 'Internal server error'});
+        await connection_db.rollback();
+        console.error('Error al crear promotor:', error);
+        return res.status(500).json({
+            ok: false,
+            message: 'Error interno del servidor'
+        });
+    } finally {
+        connection_db.release();
     }
-}
+};
 
 export const login_promotor = async (req: Request, res: Response) => {
     try {
