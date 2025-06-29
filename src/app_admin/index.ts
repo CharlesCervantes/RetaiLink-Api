@@ -7,11 +7,6 @@ import {
     deleteEstablecimiento,
     conectarEstablecimientoNegocio,
     desconectarEstablecimientoNegocio,
-    createNegocio,
-    getNegocio,
-    getAllNegocios,
-    updateNegocio,
-    deleteNegocio,
 } from './controller.admin';
 
 import {
@@ -23,16 +18,24 @@ import {
     registrar_usuario
 } from './usuarios.admin.controller';
 
+import { 
+    crear_negocio,
+    obtener_negocio,
+    obtener_lista_negocios,
+    actualizar_negocio,
+    eliminar_negocio
+} from './negocios.admin.controller';
+
 import { authMiddleware } from '../core/middleware/auth.middleware';
 
 const adminRouter: Router = express.Router();
 
 // Negocio 🏪
-adminRouter.post('/create-negocio', (req, res) => {createNegocio(req, res)});
-adminRouter.get('/get-negocio/:id', (req, res) => {getNegocio(req, res)});
-adminRouter.get('/get-all-negocios', (req, res) => {getAllNegocios(req, res)});
-adminRouter.put('/update-negocio/:id', (req, res) => {updateNegocio(req, res)});
-adminRouter.delete('/delete-negocio/:id', (req, res) => {deleteNegocio(req, res)});
+adminRouter.post('/create-negocio', (req, res) => {crear_negocio(req, res)});
+adminRouter.get('/get-negocio/:id', (req, res) => {obtener_negocio(req, res)});
+adminRouter.get('/get-all-negocios', (req, res) => {obtener_lista_negocios(req, res)});
+adminRouter.put('/update-negocio/:id', (req, res) => {actualizar_negocio(req, res)});
+adminRouter.delete('/delete-negocio/:id', (req, res) => {eliminar_negocio(req, res)});
 
 
 // Usuarios 👤
@@ -53,12 +56,5 @@ adminRouter.delete('/delete-establecimiento/:id', authMiddleware, (req, res) => 
 adminRouter.post('/conectar-establecimiento-negocio', authMiddleware, (req, res) => {conectarEstablecimientoNegocio(req, res)});
 adminRouter.post('/desconectar-establecimiento-negocio', authMiddleware, (req, res) => {desconectarEstablecimientoNegocio(req, res)});
 
-// adminRouter.post('/create-user', (req, res) => {createUser(req, res)});
-
-// adminRouter.post('/create-product', (req, res) => {createProduct(req, res)});
-
-
-
-// adminRouter.post('/create-ticket', (req, res) => {createTicket(req, res)});
 
 export default adminRouter;

@@ -12,7 +12,7 @@ export const registrar_usuario = async (req: Request, res: Response) => {
     await connection_db.beginTransaction(); // 🔸 Iniciar transacción
 
     try {
-        const { vc_username, vc_password, vc_nombre } = req.body;
+        const { vc_username, vc_password, vc_nombre, id_negocio } = req.body;
 
         if (!vc_username || !vc_password || !vc_nombre) {
             throw new Error('Username, password, and name are required');
@@ -28,6 +28,7 @@ export const registrar_usuario = async (req: Request, res: Response) => {
             vc_username,
             vc_password,
             vc_nombre,
+            id_negocio,
         };
 
         const userId = await create_user(newUser, connection_db);
@@ -52,6 +53,7 @@ export const registrar_usuario = async (req: Request, res: Response) => {
             b_activo: true,
             dt_registro: Math.floor(Date.now() / 1000),
             dt_actualizacion: Math.floor(Date.now() / 1000),
+            id_negocio,
         };
 
         return res.status(201).json({

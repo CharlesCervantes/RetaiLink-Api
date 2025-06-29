@@ -1,18 +1,18 @@
 import pool from '../config/database';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { hash_password } from '../core/utils';
-import { User, usuarios_negocios } from '../core/interfaces';
+import { User } from '../core/interfaces';
 import { PoolConnection } from 'mysql2/promise';
 
 export const create_user = async (user: User, connection: PoolConnection): Promise<number> => {
     try {
         const epochTime = Math.floor(Date.now() / 1000);
-        const { vc_username, vc_password, vc_nombre } = user;
+        const { vc_username, vc_password, vc_nombre, id_negocio } = user;
         const hashedPassword = await hash_password(vc_password);
 
         const [result] = await connection.query<ResultSetHeader>(
-            'INSERT INTO usuarios (vc_username, vc_password, vc_nombre, dt_registro, dt_actualizacion) VALUES (?, ?, ?, ?);',
-            [vc_username, hashedPassword, vc_nombre, epochTime, epochTime]
+            'INSERT INTO usuarios (vc_username, vc_password, vc_nombre, dt_registro, dt_actualizacion, id_negocio) VALUES (?, ?, ?, ?, ?);',
+            [vc_username, hashedPassword, vc_nombre, epochTime, epochTime, id_negocio]
         );
 
         return result.insertId;
@@ -29,7 +29,7 @@ export const get_user = async (
     try {
         const executor = connection || pool;
         const [rows] = await executor.query<RowDataPacket[]>(
-            'SELECT id_usuario, vc_username, vc_password, vc_nombre, dt_registro, dt_actualizacion FROM usuarios WHERE id_usuario = ? AND b_activo = 1 LIMIT 1;',
+            'SELECT id_usuario, vc_username, vc_password, vc_nombre, dt_registro, dt_actualizacion, id_negocio FROM usuarios WHERE id_usuario = ? AND b_activo = 1 LIMIT 1;',
             [id_usuario]
         );
 
@@ -43,7 +43,7 @@ export const get_user = async (
 export const get_all_users = async (): Promise<User[]> => {
     try {
         const [rows] = await pool.query<RowDataPacket[]>(
-            'SELECT id_usuario, vc_username, vc_password, vc_nombre, dt_registro, dt_actualizacion FROM usuarios WHERE b_activo = 1;'
+            'SELECT id_usuario, vc_username, vc_password, vc_nombre, dt_registro, dt_actualizacion, id_negocio FROM usuarios WHERE b_activo = 1;'
         );
         
         return rows.length > 0 ? (rows as User[]) : [];
@@ -56,7 +56,7 @@ export const get_all_users = async (): Promise<User[]> => {
 export const get_user_by_username = async (username: string): Promise<User | null> => {
     try {
         const [rows] = await pool.query<RowDataPacket[]>(
-            'SELECT id_usuario, vc_username, vc_password, vc_nombre, dt_registro, dt_actualizacion FROM usuarios WHERE vc_username = ? AND b_activo = 1 LIMIT 1;',
+            'SELECT id_usuario, vc_username, vc_password, vc_nombre, dt_registro, dt_actualizacion, id_negocio FROM usuarios WHERE vc_username = ? AND b_activo = 1 LIMIT 1;',
             [username]
         );
         
@@ -85,7 +85,7 @@ export const update_user = async (
 
         // Consultar el usuario actualizado
         const [rows] = await connection.query<RowDataPacket[]>(
-            'SELECT id_usuario, vc_username, vc_nombre, dt_actualizacion, b_activo FROM usuarios WHERE id_usuario = ?;',
+            'SELECT id_usuario, vc_username, vc_nombre, dt_actualizacion, b_activo, id_negocio FROM usuarios WHERE id_usuario = ?;',
             [id_usuario]
         );
 
@@ -121,21 +121,6 @@ export const hard_delete_user = async (id_usuario: number): Promise<void> => {
         );
     } catch (error) {
         console.error('Error al eliminar usuario admin:', error);
-        throw error;
-    }
-};
-
-export const create_usuario_negocio = async (usuario_negocio: usuarios_negocios, connection: PoolConnection): Promise<void> => {
-    try {
-        const epochTime = Math.floor(Date.now() / 1000);
-        const { id_usuario, id_negocio } = usuario_negocio;
-
-        await connection.query<ResultSetHeader>(
-            'INSERT INTO usuarios_negocios (id_usuario, id_negocio, dt_registro, dt_actualizacion, b_estatus) VALUES (?, ?, ?, ?, 1);',
-            [id_usuario, id_negocio, epochTime, epochTime]
-        );
-    } catch (error) {
-        console.error('Error al crear relación usuario-negocio:', error);
         throw error;
     }
 };

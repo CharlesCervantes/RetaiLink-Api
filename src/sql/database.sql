@@ -7,7 +7,8 @@ CREATE TABLE usuarios (
   vc_nombre VARCHAR(255) NOT NULL,
   b_activo BOOLEAN NOT NULL DEFAULT TRUE,
   dt_registro INT(11) UNSIGNED NOT NULL DEFAULT 0,
-  dt_actualizacion INT(11) UNSIGNED NOT NULL DEFAULT 0
+  dt_actualizacion INT(11) UNSIGNED NOT NULL DEFAULT 0,
+  id_negocio INT(11) UNSIGNED NOT NULL DEFAULT 0,
 );
 
 CREATE TABLE promotores (

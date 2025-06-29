@@ -6,6 +6,7 @@ interface User {
     b_activo?: boolean;
     dt_registro?: number;
     dt_actualizacion?: number;
+    id_negocio: number; // Nuevo campo para asociar el usuario a un negocio
 }
 
 interface usuarios_negocios {
