@@ -11,7 +11,7 @@ export const create_user = async (user: User, connection: PoolConnection): Promi
         const hashedPassword = await hash_password(vc_password);
 
         const [result] = await connection.query<ResultSetHeader>(
-            'INSERT INTO usuarios (vc_username, vc_password, vc_nombre, dt_registro, dt_actualizacion, id_negocio) VALUES (?, ?, ?, ?, ?);',
+            'INSERT INTO usuarios (vc_username, vc_password, vc_nombre, dt_registro, dt_actualizacion, id_negocio) VALUES (?, ?, ?, ?, ?, ?);',
             [vc_username, hashedPassword, vc_nombre, epochTime, epochTime, id_negocio]
         );
 
