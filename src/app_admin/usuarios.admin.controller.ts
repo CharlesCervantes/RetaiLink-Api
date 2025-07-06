@@ -118,7 +118,7 @@ export const login_usuario = async (req: Request, res: Response) => {
             ok: true,
             data: {
                 user: userWithoutPassword,
-                token: `Bearer ${token}`,
+                token,
             },
             message: 'User logged in successfully',
         });
