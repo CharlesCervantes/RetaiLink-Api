@@ -44,7 +44,7 @@ export const crear_producto = async (req: Request, res: Response) => {
 // Obtener todos lo productos 
 export const obtener_productos: RequestHandler = async (req, res): Promise<void> => {
     try {
-      const id_negocio = req.user?.id_negocio;
+      const id_negocio = req.query.id_negocio;
   
       if (!id_negocio) {
         res.status(400).json({
@@ -54,7 +54,7 @@ export const obtener_productos: RequestHandler = async (req, res): Promise<void>
         return;
       }
   
-      const productos = await get_all_productos(id_negocio);
+      const productos = await get_all_productos(Number(id_negocio));
   
       res.status(200).json({
         ok: true,
@@ -70,4 +70,5 @@ export const obtener_productos: RequestHandler = async (req, res): Promise<void>
       });
     }
   };
+  
   

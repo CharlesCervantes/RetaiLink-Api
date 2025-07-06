@@ -8,7 +8,6 @@ const JWT_SECRET = process.env.JWT_SECRET || 'tu_clave_secreta_super_segura';
 export interface TokenPayload {
     id: number;
     vc_username: string;
-    id_negocio: number;
 }
 
 export const hash_password = async (password_unsecured: string): Promise<string> => {

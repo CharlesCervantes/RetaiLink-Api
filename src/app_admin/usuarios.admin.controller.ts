@@ -41,7 +41,6 @@ export const registrar_usuario = async (req: Request, res: Response) => {
         const token = generate_token({
             id: userId,
             vc_username,
-            id_negocio,
         });
 
         await connection_db.commit();
