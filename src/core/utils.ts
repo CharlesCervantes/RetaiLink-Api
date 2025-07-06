@@ -40,9 +40,18 @@ export const generate_token = (payload: TokenPayload): string => {
 // Función para verificar token JWT
 export const verify_token = (token: string): TokenPayload | null => {
     try {
-      return jwt.verify(token, JWT_SECRET) as TokenPayload;
+        return jwt.verify(token, JWT_SECRET) as TokenPayload;
     } catch (error) {
-      console.error('Error al verificar token:', error);
-      return null;
+        console.error('Error al verificar token:', error);
+        return null;
     }
 };
+
+export function generarCodigoAfiliacion(): string {
+    const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let codigo = '';
+    for (let i = 0; i < 6; i++) {
+        codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+    }
+    return codigo;
+}

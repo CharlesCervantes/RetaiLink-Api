@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import {create_promotor, verify_promotor} from '../core/promotor'
+import {create_promotor, verify_promotor, generarCodigoUnico, Promotor} from '../core/promotor'
 import { create_cuenta_promotor, cuentas_promotores } from '../core/cuentas_promotores';
+import { create_afiliacion, get_promotorId_by_afiliacion} from '../core/afiliacion';
 import { generate_token } from '../core/utils';
 import pool from '../config/database';
 
@@ -10,7 +11,7 @@ export const crear_promotor = async (req: Request, res: Response) => {
     await connection_db.beginTransaction();
 
     try {
-        const { vc_username, vc_password, vc_nombre, dt_fecha_nacimiento } = req.body;
+        const { vc_username, vc_password, vc_nombre, dt_fecha_nacimiento, afiliacion } = req.body;
 
         if (!vc_username || !vc_password || !vc_nombre || !dt_fecha_nacimiento) {
             return res.status(400).json({
@@ -19,7 +20,17 @@ export const crear_promotor = async (req: Request, res: Response) => {
             });
         }
 
-        const promotorId = await create_promotor(req.body, connection_db);
+        const codigo_afiliacion = await generarCodigoUnico(connection_db);
+
+        const promotor_payload: Promotor = {
+            vc_nombre,
+            vc_username,
+            vc_password,
+            dt_fecha_nacimiento,
+            vc_codigo_afiliacion: codigo_afiliacion,
+        }
+
+        const promotorId = await create_promotor(promotor_payload, connection_db);
 
         if (!promotorId) {
             throw new Error('No se pudo crear el promotor');
@@ -41,6 +52,18 @@ export const crear_promotor = async (req: Request, res: Response) => {
             id: promotorId,
             vc_username,
         });
+
+        if (afiliacion){
+            const promotorIdAfiliado = await get_promotorId_by_afiliacion(afiliacion, connection_db);
+
+            if(promotorIdAfiliado !== null && promotorIdAfiliado > 0) {
+                await create_afiliacion({
+                id_promotor_afiliado: promotorId,
+                id_promotor_origen: promotorIdAfiliado,
+                dt_creacion: epochTime
+            }, connection_db);
+            }
+        }
 
         await connection_db.commit();
 
