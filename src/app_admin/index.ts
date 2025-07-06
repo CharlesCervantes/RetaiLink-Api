@@ -63,7 +63,7 @@ adminRouter.post('/desconectar-establecimiento-negocio', authMiddleware, (req, r
 
 // Productos 🛒
 adminRouter.post('/create-product', authMiddleware, (req, res) => {crear_producto(req, res)});
-adminRouter.get('/get-all-products', authMiddleware, obtener_productos);
+adminRouter.post('/get-all-products', authMiddleware, obtener_productos);
 
 
 export default adminRouter;
