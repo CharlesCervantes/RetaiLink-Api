@@ -28,6 +28,7 @@ import {
 
 import {
     crear_producto,
+    obtener_productos,
 } from './productos.admin.controller'
 
 import { authMiddleware } from '../core/middleware/auth.middleware';
@@ -60,9 +61,9 @@ adminRouter.delete('/delete-establecimiento/:id', authMiddleware, (req, res) => 
 adminRouter.post('/conectar-establecimiento-negocio', authMiddleware, (req, res) => {conectarEstablecimientoNegocio(req, res)});
 adminRouter.post('/desconectar-establecimiento-negocio', authMiddleware, (req, res) => {desconectarEstablecimientoNegocio(req, res)});
 
-// Productos
+// Productos 🛒
 adminRouter.post('/create-product', authMiddleware, (req, res) => {crear_producto(req, res)});
-
+adminRouter.get('/get-all-products', authMiddleware, obtener_productos);
 
 
 export default adminRouter;

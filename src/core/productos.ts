@@ -1,5 +1,5 @@
 import pool from '../config/database';
-import { ResultSetHeader } from 'mysql2';
+import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 export interface Productos {
     id_producto?: number;
@@ -29,3 +29,17 @@ export const create_producto = async (producto: Productos): Promise<number> => {
         throw error;
     }
 }
+
+export const get_all_productos = async (id_negocio: number): Promise<Productos[]> => {
+    try {
+      const [rows] = await pool.query<RowDataPacket[] & Productos[]>(
+        `SELECT * FROM productos WHERE id_negocio = ? AND b_estatus = 1`,
+        [id_negocio]
+      );
+      return rows;
+    } catch (error) {
+      console.error("Error al obtener productos:", error);
+      throw error;
+    }
+  };
+  

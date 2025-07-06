@@ -1,5 +1,6 @@
+import { RequestHandler } from "express";
 import { Request, Response } from "express";
-import { create_producto, Productos } from "../core/productos";
+import { create_producto, Productos, get_all_productos } from "../core/productos";
 
 export const crear_producto = async (req: Request, res: Response) => {
   try {
@@ -39,3 +40,34 @@ export const crear_producto = async (req: Request, res: Response) => {
     });
   }
 };
+
+// Obtener todos lo productos 
+export const obtener_productos: RequestHandler = async (req, res): Promise<void> => {
+    try {
+      const id_negocio = req.user?.id_negocio;
+  
+      if (!id_negocio) {
+        res.status(400).json({
+          ok: false,
+          message: "Falta id_negocio",
+        });
+        return;
+      }
+  
+      const productos = await get_all_productos(id_negocio);
+  
+      res.status(200).json({
+        ok: true,
+        data: productos,
+        message: "Productos obtenidos correctamente",
+      });
+    } catch (error) {
+      console.error("Error al obtener productos:", error);
+      res.status(500).json({
+        ok: false,
+        data: null,
+        message: "Error interno al obtener productos",
+      });
+    }
+  };
+  
