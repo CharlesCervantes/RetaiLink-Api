@@ -3,7 +3,7 @@ import pool from '../config/database';
 
 import { create_negocio, get_negocio, get_all_negocios, update_negocio, delete_negocio } from '../core/negocios';
 import { create_user } from '../core/usuarios';
-import { User } from '@/core/interfaces';
+import { User } from '../core/interfaces';
 
 // Crear un nuevo negocio
 export const crear_negocio = async (req: Request, res: Response) => {
@@ -76,7 +76,7 @@ export const crear_negocio = async (req: Request, res: Response) => {
             data: null,
             message: 'Error interno del servidor'
         });
-        
+
     } finally {
         connection.release(); // Liberar conexión
     }

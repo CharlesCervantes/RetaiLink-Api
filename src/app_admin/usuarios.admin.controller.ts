@@ -5,7 +5,7 @@ import { compare_password, generate_token, TokenPayload } from '../core/utils';
 import pool from '../config/database';
 
 import { get_user, create_user, get_user_by_username, get_all_users, update_user, delete_user } from '../core/usuarios';
-import { User } from '@/core/interfaces';
+import { User } from '../core/interfaces';
 
 export const registrar_usuario = async (req: Request, res: Response) => {
     const connection_db = await pool.getConnection();
