@@ -76,6 +76,7 @@ export const crear_negocio = async (req: Request, res: Response) => {
             data: null,
             message: 'Error interno del servidor'
         });
+        
     } finally {
         connection.release(); // Liberar conexión
     }

@@ -64,4 +64,5 @@ adminRouter.post('/desconectar-establecimiento-negocio', authMiddleware, (req, r
 adminRouter.post('/create-product', authMiddleware, (req, res) => {crear_producto(req, res)});
 
 
+
 export default adminRouter;
