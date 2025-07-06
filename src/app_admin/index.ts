@@ -26,6 +26,10 @@ import {
     eliminar_negocio
 } from './negocios.admin.controller';
 
+import {
+    crear_producto,
+} from './productos.admin.controller'
+
 import { authMiddleware } from '../core/middleware/auth.middleware';
 
 const adminRouter: Router = express.Router();
@@ -55,6 +59,9 @@ adminRouter.put('/update-establecimiento/:id', authMiddleware, (req, res) => {up
 adminRouter.delete('/delete-establecimiento/:id', authMiddleware, (req, res) => {deleteEstablecimiento(req, res)});
 adminRouter.post('/conectar-establecimiento-negocio', authMiddleware, (req, res) => {conectarEstablecimientoNegocio(req, res)});
 adminRouter.post('/desconectar-establecimiento-negocio', authMiddleware, (req, res) => {desconectarEstablecimientoNegocio(req, res)});
+
+// Productos
+adminRouter.post('/create-product', authMiddleware, (req, res) => {crear_producto(req, res)});
 
 
 export default adminRouter;
