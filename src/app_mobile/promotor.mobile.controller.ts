@@ -73,6 +73,10 @@ export const crear_promotor = async (req: Request, res: Response) => {
             vc_username,
             vc_nombre,
             dt_fecha_nacimiento,
+            vc_codigo_afiliacion: codigo_afiliacion,
+            b_activo: true,
+            dt_registro: epochTime,
+            dt_actualizacion: epochTime,
             cuenta: {
                 id_cuenta: cuentaId,
                 dc_saldo_actual: 0,
