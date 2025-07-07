@@ -69,7 +69,7 @@ export const crear_promotor = async (req: Request, res: Response) => {
 
          // Obtener promotor actualizado (si no tienes ya todos los campos)
         const promotor = {
-            id: promotorId,
+            id_promotor: promotorId,
             vc_username,
             vc_nombre,
             dt_fecha_nacimiento,
