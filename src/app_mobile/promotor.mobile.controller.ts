@@ -92,8 +92,10 @@ export const crear_promotor = async (req: Request, res: Response) => {
         return res.status(201).json({
             ok: true,
             message: 'Promotor creado y autenticado exitosamente',
-            token,
-            promotor
+            data: {
+                token,
+                promotor
+            }
         });
 
     } catch (error) {
