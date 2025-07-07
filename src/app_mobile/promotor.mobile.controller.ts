@@ -140,7 +140,7 @@ export const login_promotor = async (req: Request, res: Response) => {
             ok: true,
             data: {
                 token: token,
-                user: {
+                promotor: {
                     id_promotor: promotor.id_promotor,
                     vc_username: promotor.vc_username,
                     vc_nombre: promotor.vc_nombre,
