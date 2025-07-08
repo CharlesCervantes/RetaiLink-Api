@@ -50,7 +50,7 @@ export const create_promotor = async (promotor: Promotor, connection: PoolConnec
 export const verify_promotor = async (username: string, password: string): Promise<Promotor | null> => {
     try {
         const [rows] = await pool.query<any[]>(
-            'SELECT id_promotor, vc_username, vc_password, vc_nombre, dt_fecha_nacimiento, dt_registro   FROM promotores WHERE vc_username = ? LIMIT 1',
+            'SELECT id_promotor, vc_username, vc_password, vc_nombre, dt_fecha_nacimiento, vc_codigo_afiliacion, dt_registro, b_activo FROM promotores WHERE vc_username = ? LIMIT 1',
             [username]
         );
 

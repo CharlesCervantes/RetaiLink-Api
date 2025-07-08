@@ -145,9 +145,9 @@ export const login_promotor = async (req: Request, res: Response) => {
                     vc_username: promotor.vc_username,
                     vc_nombre: promotor.vc_nombre,
                     dt_fecha_nacimiento: promotor.dt_fecha_nacimiento,
+                    vc_codigo_afiliacion: promotor.vc_codigo_afiliacion,
                     b_activo: promotor.b_activo,
-                    dt_registro: promotor.dt_registro,
-                    dt_actualizacion: promotor.dt_actualizacion
+                    dt_registro: promotor.dt_registro
                 }
             },
             message: 'Inicio de sesión exitoso'
