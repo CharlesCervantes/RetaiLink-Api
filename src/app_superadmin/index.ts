@@ -3,6 +3,7 @@ import { authMiddleware } from '../core/middleware/auth.middleware'
 import { actualizar_negocio, crear_negocio, eliminar_negocio, obtener_lista_negocios, obtener_negocio } from './negocios.superadmin.controller';
 import { actualizar_usuario, eliminar_usuario, login_usuario, obtener_lista_usuarios, obtener_usuario, registrar_usuario } from './usuarios.superadmin.controller';
 import { conectarEstablecimientoNegocio, createEstablecimiento, deleteEstablecimiento, desconectarEstablecimientoNegocio, getAllEstablecimientos, getEstablecimiento, updateEstablecimiento } from './establecimientos.superadmin.controller';
+import { crear_pregunta, obtener_pregunta_por_id, obtener_todas_preguntas, actualizar_pregunta, eliminar_pregunta, obtener_preguntas_por_tipo, obtener_preguntas_por_evidencia } from './preguntas.superadmin.controller';
 
 const promotorRouter: Router = express.Router();
 
@@ -36,5 +37,14 @@ promotorRouter.put('/update-establecimiento/:id', authMiddleware, (req, res) => 
 promotorRouter.delete('/delete-establecimiento/:id', authMiddleware, (req, res) => {deleteEstablecimiento(req, res)});
 promotorRouter.post('/conectar-establecimiento-negocio', authMiddleware, (req, res) => {conectarEstablecimientoNegocio(req, res)});
 promotorRouter.post('/desconectar-establecimiento-negocio', authMiddleware, (req, res) => {desconectarEstablecimientoNegocio(req, res)});
+
+// Preguntas ❓
+promotorRouter.post('/create-pregunta', authMiddleware, (req, res) => {crear_pregunta(req, res)});
+promotorRouter.get('/get-pregunta/:id', authMiddleware, (req, res) => {obtener_pregunta_por_id(req, res)});
+promotorRouter.get('/get-all-preguntas', authMiddleware, (req, res) => {obtener_todas_preguntas(req, res)});
+promotorRouter.put('/update-pregunta/:id', authMiddleware, (req, res) => {actualizar_pregunta(req, res)});
+promotorRouter.delete('/delete-pregunta/:id', authMiddleware, (req, res) => {eliminar_pregunta(req, res)});
+promotorRouter.get('/get-preguntas-por-tipo/:tipo', authMiddleware, (req, res) => {obtener_preguntas_por_tipo(req, res)});
+promotorRouter.get('/get-preguntas-por-evidencia/:evidencia', authMiddleware, (req, res) => {obtener_preguntas_por_evidencia(req, res)});
 
 export default promotorRouter;
