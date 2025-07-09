@@ -1,3 +1,4 @@
+import { RowDataPacket } from "mysql2";
 import { PoolConnection, ResultSetHeader } from "mysql2/promise";
 
 export interface Afiliacion {
@@ -6,6 +7,14 @@ export interface Afiliacion {
     id_promotor_origen: number; // ID del promotor que originó la afiliación
     dt_creacion: number;
 }
+
+export interface AfiliacionConPromotor {
+    id_afiliacion: number;
+    id_promotor: number;
+    vc_username: string;
+    vc_nombre: string;
+    dt_creacion: Date;
+};
 
 export const create_afiliacion = async (afiliacion: Afiliacion, connection: PoolConnection): Promise<number> => {
     try {
@@ -41,3 +50,22 @@ export const get_promotorId_by_afiliacion = async (afiliacion: string, connectio
         throw error;
     }
 }
+
+export const getAfiliacionesByPromotor = async (
+    id_promotor: number,
+    connection: PoolConnection
+): Promise<AfiliacionConPromotor[]> => {
+    try {
+        const [rows] = await connection.query<RowDataPacket[]>(
+            `SELECT a.id_afiliacion, p.id_promotor, p.vc_username, p.vc_nombre, a.dt_creacion
+             FROM afiliaciones AS a
+             LEFT JOIN promotores AS p ON a.id_promotor_afiliado = p.id_promotor
+             WHERE a.id_promotor_origen = ?;`,
+            [id_promotor]
+        );
+        return rows as AfiliacionConPromotor[];
+    } catch (error) {
+        console.error('Error al obtener afiliaciones por promotor:', error);
+        throw error;
+    }
+};
