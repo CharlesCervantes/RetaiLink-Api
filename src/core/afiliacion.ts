@@ -58,9 +58,9 @@ export const getAfiliacionesByPromotor = async (
     try {
         const [rows] = await connection.query<RowDataPacket[]>(
             `SELECT a.id_afiliacion, p.id_promotor, p.vc_username, p.vc_nombre, a.dt_creacion
-             FROM afiliaciones AS a
-             LEFT JOIN promotores AS p ON a.id_promotor_afiliado = p.id_promotor
-             WHERE a.id_promotor_origen = ?;`,
+                FROM afiliaciones AS a
+                LEFT JOIN promotores AS p ON a.id_promotor_afiliado = p.id_promotor
+                WHERE a.id_promotor_origen = ?;`,
             [id_promotor]
         );
         return rows as AfiliacionConPromotor[];

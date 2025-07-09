@@ -4,6 +4,7 @@ import { authMiddleware } from '../core/middleware/auth.middleware';
 
 import { crear_promotor, login_promotor } from './promotor.mobile.controller';
 import { obtener_cuenta_promotor, realizar_deposito_promotor, realizar_retiro_promotor } from './cuenta_promotor.mobile.controller';
+import { obtener_listado_afiliacions_por_promotor } from './afiliacion.mobile.controller';
 
 const promotorRouter: Router = express.Router();
 
@@ -16,5 +17,7 @@ promotorRouter.post('/cuenta', authMiddleware, (req, res) => {obtener_cuenta_pro
 promotorRouter.post('/cuenta/deposito', authMiddleware, (req, res) => {realizar_deposito_promotor(req, res)});
 promotorRouter.post('/cuenta/retiro', authMiddleware, (req, res) => {realizar_retiro_promotor(req, res)});
 
+// afiliaciones del promotor
+promotorRouter.get('/afiliaciones/:id_promotor', authMiddleware, (req, res) => {obtener_listado_afiliacions_por_promotor(req, res)});
 
 export default promotorRouter;
