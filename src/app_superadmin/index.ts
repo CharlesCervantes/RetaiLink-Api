@@ -4,6 +4,7 @@ import { actualizar_negocio, crear_negocio, eliminar_negocio, obtener_lista_nego
 import { actualizar_usuario, eliminar_usuario, login_usuario, obtener_lista_usuarios, obtener_usuario, registrar_usuario } from './usuarios.superadmin.controller';
 import { conectarEstablecimientoNegocio, createEstablecimiento, deleteEstablecimiento, desconectarEstablecimientoNegocio, getAllEstablecimientos, getEstablecimiento, updateEstablecimiento } from './establecimientos.superadmin.controller';
 import { crear_pregunta, obtener_pregunta_por_id, obtener_todas_preguntas, actualizar_pregunta, eliminar_pregunta, obtener_preguntas_por_tipo, obtener_preguntas_por_evidencia } from './preguntas.superadmin.controller';
+import { crear_pregunta_negocio, actualizar_pregunta_negocio, eliminar_pregunta_negocio, obtener_preguntas_negocio } from './preguntas_negocio.superadmin.controllers';
 
 const promotorRouter: Router = express.Router();
 
@@ -46,5 +47,11 @@ promotorRouter.put('/update-pregunta/:id', authMiddleware, (req, res) => {actual
 promotorRouter.delete('/delete-pregunta/:id', authMiddleware, (req, res) => {eliminar_pregunta(req, res)});
 promotorRouter.get('/get-preguntas-por-tipo/:tipo', authMiddleware, (req, res) => {obtener_preguntas_por_tipo(req, res)});
 promotorRouter.get('/get-preguntas-por-evidencia/:evidencia', authMiddleware, (req, res) => {obtener_preguntas_por_evidencia(req, res)});
+
+// Preguntas Negocio ❓ 🏪
+promotorRouter.post('/create-pregunta-negocio', authMiddleware, (req, res) => {crear_pregunta_negocio(req, res)});
+promotorRouter.get('/get-preguntas-negocio/:id_negocio', authMiddleware, (req, res) => {obtener_preguntas_negocio(req, res)});
+promotorRouter.put('/update-pregunta-negocio/:id', authMiddleware, (req, res) => {actualizar_pregunta_negocio(req, res)});
+promotorRouter.delete('/delete-pregunta-negocio/:id', authMiddleware, (req, res) => {eliminar_pregunta_negocio(req, res)});
 
 export default promotorRouter;
