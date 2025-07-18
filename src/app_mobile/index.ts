@@ -8,6 +8,15 @@ import { obtener_listado_afiliacions_por_promotor } from './afiliacion.mobile.co
 
 const promotorRouter: Router = express.Router();
 
+// Verificacion de token
+promotorRouter.get('/', authMiddleware, (req, res) => {
+    res.status(200).json({
+        ok: true,
+        message: 'Mobile Promotor API is running',
+        user: req.user // devuelves el payload decodificado
+    });
+});
+
 // Promotor Routes
 promotorRouter.post('/create-promotor', (req, res) => {crear_promotor(req, res)});
 promotorRouter.post('/login', (req, res) => {login_promotor(req, res)});
