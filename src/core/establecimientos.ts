@@ -5,12 +5,12 @@ import { Establecimiento } from '../core/interfaces';
 // CREATE - Crear un nuevo establecimiento
 export const create_establecimiento = async (establecimiento: Establecimiento): Promise<number> => {
     try {
-        const { vc_nombre, vc_direccion, vc_num_economico, vc_telefono, vc_marca } = establecimiento;
+        const { vc_nombre, vc_direccion, vc_num_economico, vc_telefono, vc_marca, i_latitud, i_longitud } = establecimiento;
         const timestamp = Math.floor(Date.now() / 1000);
         
         const [result] = await pool.query<ResultSetHeader>(
-            'INSERT INTO establecimientos (vc_nombre, vc_direccion, vc_num_economico, vc_telefono, vc_marca, dt_registro, dt_actualizacion) VALUES (?, ?, ?, ?, ?, ?, ?);',
-            [vc_nombre, vc_direccion, vc_num_economico, vc_telefono, vc_marca, timestamp, timestamp]
+            'INSERT INTO establecimientos (vc_nombre, vc_direccion, vc_num_economico, vc_telefono, vc_marca, i_latitud, i_longitud, dt_registro, dt_actualizacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);',
+            [vc_nombre, vc_direccion, vc_num_economico, vc_telefono, vc_marca, i_latitud, i_longitud, timestamp, timestamp]
         );
         
         return result.insertId;
@@ -24,7 +24,7 @@ export const create_establecimiento = async (establecimiento: Establecimiento): 
 export const get_establecimiento = async (id_establecimiento: number): Promise<Establecimiento | null> => {
     try {
         const [rows] = await pool.query<RowDataPacket[]>(
-            'SELECT id_establecimiento, vc_nombre, vc_direccion, vc_num_economico, vc_telefono, vc_marca, b_estatus, dt_registro, dt_actualizacion FROM establecimientos WHERE id_establecimiento = ? AND b_estatus = 1 LIMIT 1;',
+            'SELECT id_establecimiento, vc_nombre, vc_direccion, vc_num_economico, vc_telefono, vc_marca, i_latitud, i_longitud, b_estatus, dt_registro, dt_actualizacion FROM establecimientos WHERE id_establecimiento = ? AND b_estatus = 1 LIMIT 1;',
             [id_establecimiento]
         );
         
@@ -39,7 +39,7 @@ export const get_establecimiento = async (id_establecimiento: number): Promise<E
 export const get_all_establecimientos = async (): Promise<Establecimiento[]> => {
     try {
         const [rows] = await pool.query<RowDataPacket[]>(
-            'SELECT id_establecimiento, vc_nombre, vc_direccion, vc_num_economico, vc_telefono, vc_marca, b_estatus, dt_registro, dt_actualizacion FROM establecimientos WHERE b_estatus = 1;'
+            'SELECT id_establecimiento, vc_nombre, vc_direccion, vc_num_economico, vc_telefono, vc_marca, i_latitud, i_longitud, b_estatus, dt_registro, dt_actualizacion FROM establecimientos WHERE b_estatus = 1;'
         );
         
         return rows as Establecimiento[];
@@ -52,7 +52,7 @@ export const get_all_establecimientos = async (): Promise<Establecimiento[]> => 
 // UPDATE - Actualizar un establecimiento
 export const update_establecimiento = async (id_establecimiento: number, establecimiento: Partial<Establecimiento>): Promise<boolean> => {
     try {
-        const { vc_nombre, vc_direccion, vc_num_economico, vc_telefono, vc_marca, b_estatus } = establecimiento;
+        const { vc_nombre, vc_direccion, vc_num_economico, vc_telefono, vc_marca, b_estatus, i_latitud, i_longitud } = establecimiento;
         const timestamp = Math.floor(Date.now() / 1000);
         
         // Construir dinámicamente la consulta SQL según los campos proporcionados
@@ -88,7 +88,14 @@ export const update_establecimiento = async (id_establecimiento: number, estable
             sql += ', b_estatus = ?';
             params.push(b_estatus);
         }
-        
+        if (i_latitud !== undefined) {
+            sql += ', i_latitud = ?';
+            params.push(i_latitud);
+        }
+        if (i_longitud !== undefined) {
+            sql += ', i_longitud = ?';
+            params.push(i_longitud);
+        }
         sql += ' WHERE id_establecimiento = ?;';
         params.push(id_establecimiento);
         
