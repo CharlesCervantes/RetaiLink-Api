@@ -4,10 +4,9 @@ import {
     crear_producto,
     obtener_productos,
 } from './productos.admin.controller'
-
 import { crear_pedido_plantilla,obtener_pedido_plantilla,obtener_pedido_plantilla_por_id,eliminar_pedido_plantilla } from './pedido_plantilla.controller';
-
 import { login_usuario } from './usuarios.admin.controller';
+import {crear_establecimiento, obtener_establecimiento, obtener_todos_establecimientos, actualizar_establecimiento, eliminar_establecimiento} from './establecimientos.admin.controllers';
 
 import { authMiddleware } from '../core/middleware/auth.middleware';
 import { enviar_notificacion_token, enviar_notificacion_tokens, enviar_notificacion_topic } from './notificaciones.admin.controller';
@@ -26,6 +25,13 @@ adminRouter.post('/create-pedido-plantilla', authMiddleware, (req, res) => {crea
 adminRouter.post('/get-pedido-plantilla', authMiddleware, (req, res) => {obtener_pedido_plantilla(req, res)});
 adminRouter.post('/get-pedido-plantilla-by-id', authMiddleware, (req, res) => {obtener_pedido_plantilla_por_id(req, res)});
 adminRouter.post('/delete-pedido-plantilla', authMiddleware, (req, res) => {eliminar_pedido_plantilla(req, res)});
+
+// Establecimientos 🏢
+adminRouter.post('/create-establecimiento', authMiddleware, (req, res) => {crear_establecimiento(req, res)});
+adminRouter.post('/get-establecimiento', authMiddleware, (req, res) => {obtener_establecimiento(req, res)});
+adminRouter.post('/get-all-establecimientos', authMiddleware, (req, res) => {obtener_todos_establecimientos(req, res)});
+adminRouter.put('/update-establecimiento/:id_establecimiento', authMiddleware, (req, res) => {actualizar_establecimiento(req, res)});
+adminRouter.delete('/delete-establecimiento/:id_establecimiento', authMiddleware, (req, res) => {eliminar_establecimiento(req, res)});
 
 // Notificaciones 🔔 (ejemplo: podría requerir auth)
 adminRouter.post('/send-notification-token', authMiddleware, enviar_notificacion_token);
