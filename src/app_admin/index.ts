@@ -10,6 +10,7 @@ import { crear_pedido_plantilla,obtener_pedido_plantilla,obtener_pedido_plantill
 import { login_usuario } from './usuarios.admin.controller';
 
 import { authMiddleware } from '../core/middleware/auth.middleware';
+import { enviar_notificacion_token, enviar_notificacion_tokens, enviar_notificacion_topic } from './notificaciones.admin.controller';
 
 const adminRouter: Router = express.Router();
 
@@ -25,6 +26,11 @@ adminRouter.post('/create-pedido-plantilla', authMiddleware, (req, res) => {crea
 adminRouter.post('/get-pedido-plantilla', authMiddleware, (req, res) => {obtener_pedido_plantilla(req, res)});
 adminRouter.post('/get-pedido-plantilla-by-id', authMiddleware, (req, res) => {obtener_pedido_plantilla_por_id(req, res)});
 adminRouter.post('/delete-pedido-plantilla', authMiddleware, (req, res) => {eliminar_pedido_plantilla(req, res)});
+
+// Notificaciones 🔔 (ejemplo: podría requerir auth)
+adminRouter.post('/send-notification-token', authMiddleware, enviar_notificacion_token);
+adminRouter.post('/send-notification-tokens', authMiddleware, enviar_notificacion_tokens);
+adminRouter.post('/send-notification-topic', authMiddleware, enviar_notificacion_topic);
 
 
 export default adminRouter;
