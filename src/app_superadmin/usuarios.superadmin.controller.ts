@@ -9,17 +9,16 @@ import { User } from '../core/interfaces';
 
 export const registrar_usuario = async (req: Request, res: Response) => {
     const connection_db = await pool.getConnection();
-    await connection_db.beginTransaction(); // 🔸 Iniciar transacción
+    await connection_db.beginTransaction(); 
 
     try {
-        const { vc_username, vc_password, vc_nombre, id_negocio } = req.body;
+        const { vc_username, vc_password, vc_nombre, id_negocio, i_rol } = req.body;
 
         if (!vc_username || !vc_password || !vc_nombre) {
             throw new Error('Username, password, and name are required');
         }
 
-        const existingUser = await get_user(vc_username); // 👈 Ojo: aquí estás buscando por username, no por id
-
+        const existingUser = await get_user(vc_username);
         if (existingUser) {
             throw new Error('User already exists');
         }
@@ -29,6 +28,7 @@ export const registrar_usuario = async (req: Request, res: Response) => {
             vc_password,
             vc_nombre,
             id_negocio,
+            i_rol,
         };
 
         const userId = await create_user(newUser, connection_db);
@@ -54,6 +54,7 @@ export const registrar_usuario = async (req: Request, res: Response) => {
             dt_registro: Math.floor(Date.now() / 1000),
             dt_actualizacion: Math.floor(Date.now() / 1000),
             id_negocio,
+            i_rol,
         };
 
         return res.status(201).json({

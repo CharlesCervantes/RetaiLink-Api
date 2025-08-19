@@ -7,6 +7,7 @@ interface User {
     dt_registro?: number;
     dt_actualizacion?: number;
     id_negocio: number; // Nuevo campo para asociar el usuario a un negocio
+    i_rol?: number;
 }
 
 interface usuarios_negocios {

@@ -7,12 +7,12 @@ import { PoolConnection } from 'mysql2/promise';
 export const create_user = async (user: User, connection: PoolConnection): Promise<number> => {
     try {
         const epochTime = Math.floor(Date.now() / 1000);
-        const { vc_username, vc_password, vc_nombre, id_negocio } = user;
+        const { vc_username, vc_password, vc_nombre, id_negocio, i_rol } = user;
         const hashedPassword = await hash_password(vc_password);
 
         const [result] = await connection.query<ResultSetHeader>(
-            'INSERT INTO usuarios (vc_username, vc_password, vc_nombre, dt_registro, dt_actualizacion, id_negocio) VALUES (?, ?, ?, ?, ?, ?);',
-            [vc_username, hashedPassword, vc_nombre, epochTime, epochTime, id_negocio]
+            'INSERT INTO usuarios (vc_username, vc_password, vc_nombre, dt_registro, dt_actualizacion, id_negocio, i_rol) VALUES (?, ?, ?, ?, ?, ?, ?);',
+            [vc_username, hashedPassword, vc_nombre, epochTime, epochTime, id_negocio, i_rol]
         );
 
         return result.insertId;
@@ -56,7 +56,7 @@ export const get_all_users = async (): Promise<User[]> => {
 export const get_user_by_username = async (username: string): Promise<User | null> => {
     try {
         const [rows] = await pool.query<RowDataPacket[]>(
-            'SELECT id_usuario, vc_username, vc_password, vc_nombre, dt_registro, dt_actualizacion, id_negocio FROM usuarios WHERE vc_username = ? AND b_activo = 1 LIMIT 1;',
+            'SELECT id_usuario, vc_username, vc_password, vc_nombre, dt_registro, dt_actualizacion, id_negocio, i_rol FROM usuarios WHERE vc_username = ? AND b_activo = 1 LIMIT 1;',
             [username]
         );
         
