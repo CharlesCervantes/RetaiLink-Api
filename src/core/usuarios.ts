@@ -67,6 +67,20 @@ export const get_user_by_username = async (username: string): Promise<User | nul
     }
 };
 
+export const get_all_users_by_buisness = async (id_negocio: number): Promise<User[]> => {
+    try {
+        const [rows] = await pool.query<RowDataPacket[]>(
+            'SELECT id_usuario, vc_username, vc_password, vc_nombre, dt_registro, dt_actualizacion, id_negocio, b_activo, dt_actualizacion, i_rol FROM usuarios WHERE id_negocio = ? AND b_activo = 1;',
+            [id_negocio]
+        );
+        
+        return rows.length > 0 ? (rows as User[]) : [];
+    } catch (error) {
+        console.error('Error al obtener usuarios por negocio:', error);
+        throw error;
+    }
+};
+
 export const update_user = async (
     id_usuario: number,
     user: User,

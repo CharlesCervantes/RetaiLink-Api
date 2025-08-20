@@ -40,6 +40,7 @@ export const crear_negocio = async (req: Request, res: Response) => {
             vc_password: defaultPassword,
             vc_nombre: negocio.vc_nombre,
             id_negocio: new_negocio_id, // Asociar el usuario al nuevo negocio
+            i_rol: 1
         };
         const new_user_id = await create_user(user, connection);
 

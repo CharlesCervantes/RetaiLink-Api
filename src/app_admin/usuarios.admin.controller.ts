@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { compare_password, generate_token, TokenPayload } from '../core/utils';
-import { get_user_by_username } from '../core/usuarios';
+import { get_user_by_username, get_all_users_by_buisness } from '../core/usuarios';
 
 export const login_usuario = async (req: Request, res: Response) => {
     try {
@@ -55,3 +55,29 @@ export const login_usuario = async (req: Request, res: Response) => {
         });
     }
 };
+
+export const obtener_usuarios_negocio = async(req: Request, res: Response) =>{
+    try {
+        const { id_negocio } = req.body;
+
+        if (!id_negocio) {
+            throw new Error('id_negocio is required');
+        }
+
+        const usuarios = await get_all_users_by_buisness(id_negocio);
+
+        return res.status(200).json({
+            ok: true,
+            data: usuarios,
+            message: 'Usuarios obtenidos exitosamente'
+        });
+
+    } catch (error) {
+        console.error('Error obtener_usuarios_negocio:', error);
+        return res.status(500).json({
+            ok: false,
+            data: null,
+            message: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+}
