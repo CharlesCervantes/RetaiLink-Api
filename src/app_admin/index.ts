@@ -5,7 +5,7 @@ import {
     obtener_productos,
 } from './productos.admin.controller'
 import { crear_pedido_plantilla,obtener_pedido_plantilla,obtener_pedido_plantilla_por_id,eliminar_pedido_plantilla } from './pedido_plantilla.controller';
-import { login_usuario, obtener_usuarios_negocio } from './usuarios.admin.controller';
+import { login_usuario, obtener_usuarios_negocio, registrar_usuario_negocio } from './usuarios.admin.controller';
 import {crear_establecimiento, obtener_establecimiento, obtener_todos_establecimientos, actualizar_establecimiento, eliminar_establecimiento} from './establecimientos.admin.controllers';
 
 import { authMiddleware } from '../core/middleware/auth.middleware';
@@ -16,6 +16,7 @@ const adminRouter: Router = express.Router();
 // Usuarios 👤
 adminRouter.post('/login-user', (req, res) => {login_usuario(req, res)});
 adminRouter.post('/get-users-by-business', authMiddleware, (req, res) => {obtener_usuarios_negocio(req, res)});
+adminRouter.post('/register-user-by-buisness', authMiddleware, (req, res) => {registrar_usuario_negocio(req, res)});
 
 // Productos 🛒
 adminRouter.post('/create-product', authMiddleware, (req, res) => {crear_producto(req, res)});
