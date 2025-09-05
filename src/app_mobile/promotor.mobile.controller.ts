@@ -4,6 +4,7 @@ import { create_cuenta_promotor, cuentas_promotores } from '../core/cuentas_prom
 import { create_afiliacion, get_promotorId_by_afiliacion} from '../core/afiliacion';
 import { generate_token } from '../core/utils';
 import pool from '../config/database';
+import { addNotificationJob } from '../queues/notification.queue';
 
 export const crear_promotor = async (req: Request, res: Response) => {
     const epochTime = Math.floor(Date.now() / 1000);
@@ -11,7 +12,7 @@ export const crear_promotor = async (req: Request, res: Response) => {
     await connection_db.beginTransaction();
 
     try {
-        const { vc_username, vc_password, vc_nombre, dt_fecha_nacimiento, afiliacion } = req.body;
+        const { vc_username, vc_password, vc_nombre, dt_fecha_nacimiento, afiliacion, fcm_token } = req.body;
 
         if (!vc_username || !vc_password || !vc_nombre || !dt_fecha_nacimiento) {
             return res.status(400).json({
@@ -89,14 +90,41 @@ export const crear_promotor = async (req: Request, res: Response) => {
             }
         };
 
-        return res.status(201).json({
+        // Enviar respuesta al cliente primero
+        const response = {
             ok: true,
             message: 'Promotor creado y autenticado exitosamente',
             data: {
                 token,
                 promotor
             }
-        });
+        };
+        
+        res.status(201).json(response);
+
+        // Después de enviar la respuesta, agregar el trabajo de notificación a la cola
+        if (fcm_token) {
+            try {
+                await addNotificationJob({
+                    fcmToken: fcm_token,
+                    notification: {
+                        title: '¡Bienvenido a RetaiLink!',
+                        body: `Hola ${vc_nombre}, tu cuenta ha sido creada exitosamente. Tu código de afiliación es: ${codigo_afiliacion}`,
+                        data: {
+                            type: 'welcome',
+                            promotor_id: promotorId.toString(),
+                            codigo_afiliacion: codigo_afiliacion
+                        }
+                    },
+                    type: 'single'
+                });
+                console.log('Notification job added successfully for promotor:', promotorId);
+            } catch (notificationError) {
+                console.error('Error adding notification job:', notificationError);
+            }
+        }
+
+        return;
 
     } catch (error) {
         await connection_db.rollback();

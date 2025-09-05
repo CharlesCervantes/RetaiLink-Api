@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
-import { bucket } from "../config/cloud_store";
+// import { bucket } from "../config/cloud_store";
 
 dotenv.config();
 

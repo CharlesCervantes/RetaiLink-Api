@@ -7,6 +7,7 @@ import {testConnection} from './config/database';
 import adminRouter from './app_admin/index';
 import promotorRouter from './app_mobile/index';
 import superadminRouter from './app_superadmin/index';
+import './queues/notification.queue';
 
 dotenv.config();
 
@@ -25,7 +26,6 @@ app.use(morgan('dev'));
 app.use('/retailink-api/admin', adminRouter);
 app.use('/retailink-api/mobile', promotorRouter);
 app.use('/retailink-api/superadmin', superadminRouter);
-
 
 // Ruta de prueba
 app.get('/', (_req, _res) => {
