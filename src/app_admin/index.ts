@@ -10,6 +10,7 @@ import {crear_establecimiento, obtener_establecimiento, obtener_todos_establecim
 
 import { authMiddleware } from '../core/middleware/auth.middleware';
 import { enviar_notificacion_token, enviar_notificacion_tokens, enviar_notificacion_topic } from './notificaciones.admin.controller';
+import { upload_file } from './utils.admin.controller';
 
 const adminRouter: Router = express.Router();
 
@@ -39,6 +40,9 @@ adminRouter.delete('/delete-establecimiento/:id_establecimiento', authMiddleware
 adminRouter.post('/send-notification-token', authMiddleware, enviar_notificacion_token);
 adminRouter.post('/send-notification-tokens', authMiddleware, enviar_notificacion_tokens);
 adminRouter.post('/send-notification-topic', authMiddleware, enviar_notificacion_topic);
+
+// Utils 
+adminRouter.post('/upload_file', upload_file);
 
 
 export default adminRouter;

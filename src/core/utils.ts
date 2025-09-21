@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
+import { Database } from './database'
 // import { bucket } from "../config/cloud_store";
 
 dotenv.config();
@@ -55,4 +56,30 @@ export function generarCodigoAfiliacion(): string {
         codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
     }
     return codigo;
+}
+
+export class Utils {
+    constructor(){}
+
+    static async registerUserLog(db: Database, userId: number, log: string): Promise<void> {
+        let commit = false;
+        try {
+            if (!db.inTransaction) {
+                await db.beginTransaction();
+                commit = true;
+            }
+            await db.query(
+                "INSERT INTO user_logs (id_user, `log`, i_status) VALUES (?, ?, 1)",
+                [userId, log]
+            );
+            if (commit) {
+                await db.commit();
+            }
+        } catch (error) {
+            if (commit) {
+                await db.rollback();
+            }
+            throw error;
+        }
+    }
 }
