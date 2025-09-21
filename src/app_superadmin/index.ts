@@ -13,12 +13,12 @@ const userModel = new User();
 
 superAdminRouter.post("/register-user", async (req: Request, res: Response): Promise<void> => {
     try {
-        const { email, password } = req.body;
+        const { email, password, name, lastname } = req.body;
         if (!email || !password) {
             res.status(400).json({ error: "Email y password son requeridos" });
             return;
         }
-        const result = await userModel.createSuperAdmin(email, password);
+        const result = await userModel.createSuperAdmin(email, password, name, lastname);
         res.status(201).json({
             message: "Super admin creado correctamente",
             data: result,

@@ -8,7 +8,7 @@ export class User {
     constructor() {}
 
     // Controller functions
-    async createSuperAdmin(email: string, password: string) {
+    async createSuperAdmin(email: string, password: string, name: string, lastname: string) {
         let commit = false;
         try {
             if (!this.db.inTransaction) {
@@ -17,8 +17,8 @@ export class User {
             }
             const hased_password = await Utils.hash_password(password);
             const [result]: any = await this.db.query(
-                "INSERT INTO users (email, password, i_rol) VALUES (?, ?, 1)",
-                [email, hased_password]
+                "INSERT INTO users (email, password, i_rol, name, lastname) VALUES (?, ?, 1, ?, ?)",
+                [email, hased_password, name, lastname]
             );
             await Utils.registerUserLog(this.db, result.insertId, "Super admin creado");
             if (commit) {
@@ -59,7 +59,7 @@ export class User {
     // Auxiliar functions
     async getUserById(id: number): Promise<IUser>{
         try {
-            const [result]: any[] = await this.db.query("SELECT id_user, email, i_rol, dt_register, dt_updated FROM users WHERE id_user = ? LIMIT 1", [id]);
+            const [result]: any[] = await this.db.query("SELECT id_user, email, i_rol, dt_register, dt_updated, name, lastname FROM users WHERE id_user = ? LIMIT 1", [id]);
             const user_finded = result[0];
             if (!user_finded) {
                 throw new Error("Usuario no encontrado");
@@ -72,7 +72,7 @@ export class User {
     
     async getUserByEmail(email: string): Promise<IUser>{
         try {
-            const [result]: any[] = await this.db.query("SELECT id_user, email, password, i_rol, dt_register, dt_updated FROM users WHERE email = ? LIMIT 1", [email]);
+            const [result]: any[] = await this.db.query("SELECT id_user, email, password, i_rol, dt_register, dt_updated, name,lastname FROM users WHERE email = ? LIMIT 1", [email]);
             const user_finded = result[0];
             if (!user_finded) {
                 throw new Error("Usuario no encontrado");
