@@ -29,6 +29,24 @@ superAdminRouter.post("/register-user", async (req: Request, res: Response): Pro
     }
 });
 
+superAdminRouter.post("/login", async(req: Request, res: Response): Promise<void> => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            res.status(400).json({ error: "Email y password son requeridos" });
+            return;
+        }
+        const result = await userModel.loginSuperAdmin(email, password);
+        res.status(201).json({
+            message: "Super admin inicio session correctamente",
+            data: result,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error creando super admin", details: error });
+    }
+})
+
 
 // // Negocio 🏪
 // promotorRouter.post('/create-negocio', authMiddleware, (req, res) => {crear_negocio(req, res)});

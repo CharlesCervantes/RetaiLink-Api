@@ -9,35 +9,8 @@ dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET || 'tu_clave_secreta_super_segura';
 export interface TokenPayload {
     id: number;
-    vc_username: string;
+    email: string;
 }
-
-export const hash_password = async (password_unsecured: string): Promise<string> => {
-    try {
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(password_unsecured, saltRounds);
-        return hashedPassword;
-    } catch (error) {
-        console.error('Error al hashear la contraseña:', error);
-        throw error;
-    }
-}
-
-export const compare_password = async (password_unsecured: string, password_hashed: string): Promise<boolean> => {
-    try {
-        const isMatch = await bcrypt.compare(password_unsecured, password_hashed);
-        return isMatch;
-    } catch (error) {
-        console.error('Error al comparar contraseñas:', error);
-        throw error;
-    }
-}
-
-export const generate_token = (payload: TokenPayload): string => {
-    return jwt.sign(payload, JWT_SECRET, { 
-      expiresIn: '24h' // El token expira en 24 horas
-    });
-};
 
 // Función para verificar token JWT
 export const verify_token = (token: string): TokenPayload | null => {
@@ -82,4 +55,31 @@ export class Utils {
             throw error;
         }
     }
+
+    static async hash_password (password_unsecured: string): Promise<string> {
+        try {
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash(password_unsecured, saltRounds);
+            return hashedPassword;
+        } catch (error) {
+            console.error('Error al hashear la contraseña:', error);
+            throw error;
+        }
+    }
+
+    static async compare_password (password_unsecured: string, password_hashed: string): Promise<boolean> {
+        try {
+            const isMatch = await bcrypt.compare(password_unsecured, password_hashed);
+            return isMatch;
+        } catch (error) {
+            console.error('Error al comparar contraseñas:', error);
+            throw error;
+        }
+    }
+
+    static generate_token (payload: TokenPayload): string {
+        return jwt.sign(payload, JWT_SECRET, { 
+            expiresIn: '30d'
+        });
+    };
 }
