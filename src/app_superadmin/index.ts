@@ -7,17 +7,24 @@ import express, {Router, Request, Response} from 'express';
 // import { crear_pregunta_negocio, actualizar_pregunta_negocio, eliminar_pregunta_negocio, obtener_preguntas_negocio } from './preguntas_negocio.superadmin.controllers';
 
 import { User } from './user';
+import { Client } from './client';
+import { Store } from './store';
+import { IStore } from '@/core/interfaces/store';
 
 const superAdminRouter: Router = express.Router();
-const userModel = new User();
+const getUserModel = () => new User();
+const getClientModel = () => new Client();
+const getStoreModel = () => new Store();
 
 superAdminRouter.post("/register-user", async (req: Request, res: Response): Promise<void> => {
+    let userModel: User | null = null;
     try {
         const { email, password, name, lastname } = req.body;
         if (!email || !password) {
             res.status(400).json({ error: "Email y password son requeridos" });
             return;
         }
+        userModel = getUserModel();
         const result = await userModel.createSuperAdmin(email, password, name, lastname);
         res.status(201).json({
             message: "Super admin creado correctamente",
@@ -26,16 +33,20 @@ superAdminRouter.post("/register-user", async (req: Request, res: Response): Pro
     } catch (error: any) {
         console.error(error);
         res.status(500).json({ error: "Error creando super admin", details: error });
+    } finally {
+        userModel = null;
     }
 });
 
 superAdminRouter.post("/login", async(req: Request, res: Response): Promise<void> => {
+    let userModel: User | null = null;
     try {
         const { email, password } = req.body;
         if (!email || !password) {
             res.status(400).json({ error: "Email y password son requeridos" });
             return;
         }
+        userModel = getUserModel();
         const result = await userModel.loginSuperAdmin(email, password);
         res.status(201).json({
             message: "Super admin inicio session correctamente",
@@ -44,8 +55,76 @@ superAdminRouter.post("/login", async(req: Request, res: Response): Promise<void
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Error creando super admin", details: error });
+    } finally {
+        userModel = null;
     }
 })
+
+superAdminRouter.post("/create-client", async(req: Request, res: Response): Promise<void> => {
+    let clientModel: Client | null = null;
+    try {
+        const {id_user, name} = req.body;
+
+        if(!id_user){
+            res.status(400).json({ error: "Error creando el cliente" })
+        }
+        clientModel = getClientModel();
+        const result = await clientModel.createClient(id_user, name);
+        res.status(201).json({
+            message: "Super admin creo cliente correctamente",
+            data: result,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error creando cliente", details: error });
+    } finally {
+        clientModel = null;
+    }
+});
+
+superAdminRouter.post("/create-store", async(req: Request, res: Response): Promise<void> => {
+    let storeModel: Store | null = null;
+    try {
+        const { id_user, name, store_code, street, ext_number, int_number, neighborhood, municipality, state, postal_code, country, latitude, longitude } = req.body;
+
+        if(!id_user || !name){
+            res.status(400).json({ error: "id_user y name son requeridos" })
+            return;
+        }
+
+        storeModel = getStoreModel();
+        const newStore: IStore = {
+            id_store: 0,
+            id_user: id_user,
+            name: name,
+            store_code: store_code,
+            street: street,
+            ext_number: ext_number,
+            int_number: int_number,
+            neighborhood: neighborhood,
+            municipality: municipality,
+            state: state,
+            postal_code: postal_code,
+            country: country,
+            latitude: latitude,
+            longitude: longitude,
+            i_status: false,
+            dt_register: '',
+            dt_updated: ''
+        }
+
+        const result = await storeModel.createStore(id_user, newStore);
+        res.status(201).json({
+            message: "Super admin creo tienda correctamente",
+            data: result,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error creando tienda", details: error });
+    } finally {
+        storeModel = null;
+    }
+});
 
 
 // // Negocio 🏪

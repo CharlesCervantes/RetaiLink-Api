@@ -56,6 +56,50 @@ export class Utils {
         }
     }
 
+    static async registerClienteLog(db: Database, clientId: number, userId: number, log: string): Promise<void> {
+        let commit = false;
+        try {
+            if (!db.inTransaction) {
+                await db.beginTransaction();
+                commit = true;
+            }
+            await db.query(
+                "INSERT INTO client_logs (id_client, id_user, `log`, i_status) VALUES (?, ?, ?, 1)",
+                [clientId, userId, log]
+            );
+            if (commit) {
+                await db.commit();
+            }
+        } catch (error) {
+            if (commit) {
+                await db.rollback();
+            }
+            throw error;
+        }
+    }
+
+    static async registerStoreLog(db: Database, storeId: number, userId: number, log: string): Promise<void> {
+        let commit = false;
+        try {
+            if (!db.inTransaction) {
+                await db.beginTransaction();
+                commit = true;
+            }
+            await db.query(
+                "INSERT INTO store_logs (id_store, id_user, `log`, i_status) VALUES (?, ?, ?, 1)",
+                [storeId, userId, log]
+            );
+            if (commit) {
+                await db.commit();
+            }
+        } catch (error) {
+            if (commit) {
+                await db.rollback();
+            }
+            throw error;
+        }
+    }
+
     static async hash_password (password_unsecured: string): Promise<string> {
         try {
             const saltRounds = 10;

@@ -1,17 +1,15 @@
-export interface IUser {
+export interface IClient {
+    id_client: number,
     id_user: number,
-    email: string,
-    password: string,
     name: string,
-    lastname: string,
-    i_rol: number,
     i_status: boolean,
     dt_register: string,
     dt_updated: string
 }
 
-export interface IUserLog {
-    id_user_log: number,
+export interface IClientLog {
+    id_client_log: number,
+    id_client: number,
     id_user: number,
     log: string,
     i_status: boolean,

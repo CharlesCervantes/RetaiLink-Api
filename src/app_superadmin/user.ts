@@ -1,7 +1,7 @@
 // models/User.ts
 import db from "../config/database";
 import { TokenPayload, Utils } from '../core/utils'
-import { IUser } from "@/core/interfaces/user";
+import { IUser } from "../core/interfaces/user";
 
 export class User {
     private db = db;
