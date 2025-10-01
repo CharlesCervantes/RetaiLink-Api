@@ -9,12 +9,14 @@ import express, {Router, Request, Response} from 'express';
 import { User } from './user';
 import { Client } from './client';
 import { Store } from './store';
+import { Question } from './question';
 import { IStore } from '@/core/interfaces/store';
 
 const superAdminRouter: Router = express.Router();
 const getUserModel = () => new User();
 const getClientModel = () => new Client();
 const getStoreModel = () => new Store();
+const getQuestionModel = () => new Question();
 
 superAdminRouter.post("/register-user", async (req: Request, res: Response): Promise<void> => {
     let userModel: User | null = null;
@@ -123,6 +125,64 @@ superAdminRouter.post("/create-store", async(req: Request, res: Response): Promi
         res.status(500).json({ error: "Error creando tienda", details: error });
     } finally {
         storeModel = null;
+    }
+});
+
+superAdminRouter.post("/create-question", async(req: Request, res: Response): Promise<void> => {
+    let questionModel: Question | null = null;
+    try {
+        const { id_user, question, base_price, i_status, promoter_earns } = req.body;
+
+        if(!id_user || !question || base_price === undefined || promoter_earns === undefined){
+            res.status(400).json({ error: "id_user, question, base_price y promoter_earns son requeridos" })
+            return;
+        }
+
+        questionModel = getQuestionModel();
+        const newQuestion = {
+            id_question: 0,
+            id_user: id_user,
+            question: question,
+            base_price: base_price,
+            promoter_earns: promoter_earns,
+            i_status: i_status,
+            dt_register: '',
+            dt_updated: ''
+        }
+        const result = await questionModel.createQuestion(id_user, newQuestion);
+        res.status(201).json({
+            message: "Super admin creo pregunta correctamente",
+            data: result,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error creando pregunta", details: error });
+    } finally {
+        questionModel = null;
+    }
+});
+
+superAdminRouter.post("/assign-question-to-client", async(req: Request, res: Response): Promise<void> => {
+    let questionModel: Question | null = null;
+    try {
+        const { id_user, id_question, id_client, client_price, client_promoter_earns } = req.body;
+
+        if(!id_user || !id_question || !id_client){
+            res.status(400).json({ error: "id_user, id_question y id_client son requeridos" })
+            return;
+        }
+
+        questionModel = getQuestionModel();
+        const result = await questionModel.asignQuestionToClient(id_question, id_client, id_user, client_price, client_promoter_earns);
+        res.status(201).json({
+            message: "Super admin asigno pregunta a cliente correctamente",
+            data: result,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error asignando pregunta a cliente", details: error });
+    } finally {
+        questionModel = null;
     }
 });
 

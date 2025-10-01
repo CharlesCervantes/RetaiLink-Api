@@ -63,10 +63,13 @@ export class Utils {
                 await db.beginTransaction();
                 commit = true;
             }
-            await db.query(
-                "INSERT INTO client_logs (id_client, id_user, `log`, i_status) VALUES (?, ?, ?, 1)",
-                [clientId, userId, log]
-            );
+
+            const query = "INSERT INTO client_logs (id_client, id_user, `log`, i_status) VALUES (?, ?, ?, 1)";
+            const params = [clientId, userId, log];
+            const resp = await db.execute(query, params);
+
+            console.log("resp: ", resp);
+
             if (commit) {
                 await db.commit();
             }
@@ -88,6 +91,50 @@ export class Utils {
             await db.query(
                 "INSERT INTO store_logs (id_store, id_user, `log`, i_status) VALUES (?, ?, ?, 1)",
                 [storeId, userId, log]
+            );
+            if (commit) {
+                await db.commit();
+            }
+        } catch (error) {
+            if (commit) {
+                await db.rollback();
+            }
+            throw error;
+        }
+    }
+
+    static async registerQuestionLog(db: Database, questionId: number, userId: number, log: string): Promise<void> {
+        let commit = false;
+        try {
+            if (!db.inTransaction) {
+                await db.beginTransaction();
+                commit = true;
+            }
+            await db.query(
+                "INSERT INTO question_logs (id_question, id_user, `log`, i_status) VALUES (?, ?, ?, 1)",
+                [questionId, userId, log]
+            );
+            if (commit) {
+                await db.commit();
+            }
+        } catch (error) {
+            if (commit) {
+                await db.rollback();
+            }
+            throw error;
+        }
+    }
+
+    static async registerQuestionClientLog(db: Database, questionClientId: number, userId: number, log: string): Promise<void> {
+        let commit = false;
+        try {
+            if (!db.inTransaction) {
+                await db.beginTransaction();
+                commit = true;
+            }
+            await db.query(
+                "INSERT INTO question_client_logs (id_question_client, id_user, `log`, i_status) VALUES (?, ?, ?, 1)",
+                [questionClientId, userId, log]
             );
             if (commit) {
                 await db.commit();
