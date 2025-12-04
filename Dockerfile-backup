@@ -31,6 +31,10 @@ RUN npm install --only=production
 # Copy the built application from the build stage
 COPY --from=build /app/dist ./dist
 
+# Después de COPY --from=build /app/dist ./dist
+COPY intense-reason-468204-v1-27660a65ef8d.json ./
+COPY promotoria-58026-firebase-adminsdk-fbsvc-02192bb420.json ./
+
 EXPOSE 3000
 
 CMD ["node", "dist/index.js"]

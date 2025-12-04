@@ -11,6 +11,9 @@
     "postbuild": "cpx \"src/**/*.{env,json,html,css,png,jpg}\" dist",
     "prod": "npm run build && npm start"
   },
+  "_moduleAliases": {
+    "@": "dist"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -29,6 +32,7 @@
     "helmet": "^8.1.0",
     "ioredis": "^5.7.0",
     "jsonwebtoken": "^9.0.2",
+    "module-alias": "^2.2.3",
     "morgan": "^1.10.0",
     "multer": "^2.0.2",
     "mysql2": "^3.14.0",
