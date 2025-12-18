@@ -2,7 +2,10 @@ import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import nodemailer from "nodemailer";
 import * as jwt from "jsonwebtoken";
+import { EmailService } from "./services/email/EmailService";
+
 import { Database } from "./database";
+
 // import { bucket } from "../config/cloud_store";
 
 dotenv.config();
@@ -33,7 +36,11 @@ export function generarCodigoAfiliacion(): string {
 }
 
 export class Utils {
-  constructor() {}
+  emailService: EmailService;
+
+  constructor() {
+    this.emailService = new EmailService();
+  }
 
   static async registerUserLog(
     db: Database,
@@ -227,5 +234,42 @@ export class Utils {
       },
     });
     return transporter;
+  }
+
+  /**
+   * Envía un email usando el proveedor actual del EmailService
+   * @param to - Destinatario(s) del email
+   * @param subject - Asunto del email
+   * @param html - Contenido HTML del email
+   * @param text - Contenido en texto plano (opcional)
+   * @returns Promise<boolean> - true si el email se envió correctamente
+   */
+  static async sendEmail(
+    to: string | string[],
+    subject: string,
+    html: string,
+    text?: string,
+  ): Promise<boolean> {
+    try {
+      const emailService = new EmailService();
+
+      const result = await emailService.send({
+        to,
+        subject,
+        html,
+        text,
+      });
+
+      if (!result.success) {
+        console.error(`Error al enviar email: ${result.error}`);
+        return false;
+      }
+
+      console.log(`Email enviado con ${result.provider}: ${result.messageId}`);
+      return true;
+    } catch (error) {
+      console.error("Error al enviar email:", error);
+      return false;
+    }
   }
 }

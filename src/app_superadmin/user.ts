@@ -88,19 +88,20 @@ export class User {
       // Crear link de recuperación
       const resetLink = `${process.env.FRONTEND_URL}/restore-pwd?token=${token}`;
 
-      const mailOptions = {
-        from: `"Tu Empresa" <${process.env.GMAIL_USER}>`,
-        to: user.email,
-        subject: "Recuperación de Contraseña",
-        html: getPasswordResetTemplate(user.name, resetLink, token),
-      };
+      const emailSent = await Utils.sendEmail(
+        user.email,
+        "Recuperación de Contraseña",
+        getPasswordResetTemplate(user.name, resetLink, token),
+      );
 
-      const transporter = Utils.generate_email_transporter();
-      const info = await transporter.sendMail(mailOptions);
+      console.log(emailSent);
+
+      if (!emailSent) {
+        throw new Error("Error al enviar el correo de recuperación");
+      }
 
       return {
         message: "Correo de recuperación enviado exitosamente",
-        data: info,
       };
     } catch (error) {
       throw error;

@@ -4,7 +4,6 @@ import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import { Utils } from "./core/utils";
 
 // Configuration
 // import './queues/notification.queue';
@@ -45,16 +44,6 @@ const startServer = async () => {
       console.log(`Server is running on port ${PORT}`);
       console.log(`API is accessible at http://localhost:${PORT}`);
       console.log(`Local network access: http://[TU_IP_LOCAL]:${PORT}`);
-
-      // Verificacion de servicios
-      const email_transporter = Utils.generate_email_transporter();
-      email_transporter.verify((error, _success) => {
-        if (error) {
-          console.error("Error en configuración de email:", error);
-        } else {
-          console.log("Servidor de email listo para enviar mensajes");
-        }
-      });
     });
   } catch (error) {
     console.error("Error starting server:", error);
