@@ -82,13 +82,36 @@ superAdminRouter.post(
   async (req: Request, res: Response): Promise<void> => {
     let clientModel: Client | null = null;
     try {
-      const { id_user, name } = req.body;
+      const { 
+        id_user, 
+        name,
+        rfc,
+        email,
+        phone,
+        address,
+        city,
+        state,
+        zip,
+        adiccional_notes
+      } = req.body;
 
-      if (!id_user) {
-        res.status(400).json({ error: "Error creando el cliente" });
+      if (!id_user || !name) {
+        res.status(400).json({ error: "id_user y name son requeridos" });
+        return;
       }
+
       clientModel = getClientModel();
-      const result = await clientModel.createClient(id_user, name);
+      const result = await clientModel.createClient(id_user, name, {
+        rfc,
+        email,
+        phone,
+        address,
+        city,
+        state,
+        zip,
+        adiccional_notes
+      });
+
       res.status(201).json({
         message: "Super admin creo cliente correctamente",
         data: result,

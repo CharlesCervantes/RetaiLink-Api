@@ -2,22 +2,48 @@ import db from "../config/database";
 import { Database } from "../core/database";
 import { Utils } from "../core/utils";
 
+interface CreateClientData {
+    rfc?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+    adiccional_notes?: string;
+}
+
 export class Client {
     private db: Database = db;
 
     constructor(){}
 
-    async createClient(id_user: number, name: string){
+    async createClient(id_user: number, name: string, data: CreateClientData = {}) {
         let commit = false;
         try {
             if(!this.db.inTransaction){
                 this.db.beginTransaction();
                 commit = true;
             }
-            const result = await this.db.execute(
-                "INSERT INTO clients (id_user, name) VALUES (?, ?)",
-                [id_user, name]
-            );
+
+            const fields = ['id_user', 'name'];
+            const values: any[] = [id_user, name];
+            const placeholders = ['?', '?'];
+
+            const optionalFields: (keyof CreateClientData)[] = [
+                'rfc', 'email', 'phone', 'address', 'city', 'adiccional_notes'
+            ];
+
+            for (const field of optionalFields) {
+                if (data[field] !== undefined && data[field] !== '') {
+                    fields.push(field);
+                    values.push(data[field]);
+                    placeholders.push('?');
+                }
+            }
+
+            const query = `INSERT INTO clients (${fields.join(', ')}) VALUES (${placeholders.join(', ')})`;
+            const result = await this.db.execute(query, values);
 
             const clientId = result.insertId;
 
