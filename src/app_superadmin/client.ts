@@ -65,4 +65,15 @@ export class Client {
             throw error;
         }
     }
+
+    async getClients() {
+        try {
+            const query = `SELECT id_client, name, i_status, dt_register, dt_updated, rfc, email, phone FROM clients`;
+            const clients = await this.db.select(query);
+            return clients;
+        } catch (error) {
+            console.error("Error en getClients: ", error);
+            throw error;
+        }
+    }
 }
