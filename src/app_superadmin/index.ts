@@ -295,6 +295,26 @@ superAdminRouter.get("/get_clients_list", async (_req: Request, res: Response): 
   },
 );
 
+superAdminRouter.get("/get_client/:id", async (req: Request, res: Response): Promise<void> => {
+    let clientModel: Client | null = null;
+    try {
+      clientModel = getClientModel();
+      const result = await clientModel.getClientById(parseInt(req.params.id));
+      res.status(200).json({
+        message: "Cliente obtenido correctamente",
+        data: result,
+      });
+    } catch (error) {
+      console.error(error);
+      res
+        .status(500)
+        .json({ error: "Error obteniendo cliente", details: error });
+    } finally {
+      clientModel = null;
+    }
+  },
+);
+
 // // Negocio
 // promotorRouter.post('/create-negocio', authMiddleware, (req, res) => {crear_negocio(req, res)});
 // promotorRouter.get('/get-negocio/:id', authMiddleware, (req, res) => {obtener_negocio(req, res)});

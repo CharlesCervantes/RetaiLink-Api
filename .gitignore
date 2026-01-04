@@ -61,3 +61,5 @@ config.local.js
 *.pem
 *.key
 *.crt
+
+keys/

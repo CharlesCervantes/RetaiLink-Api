@@ -1,13 +1,14 @@
 // models/User.ts
 import { RowDataPacket } from "mysql2/promise";
 import jwt from "jsonwebtoken";
-
+import { Client } from "./client";
 import db from "../config/database";
 import { TokenPayload, Utils } from "../core/utils";
 import { IUser } from "../core/interfaces/user";
 import {
   getPasswordChangedTemplate,
   getPasswordResetTemplate,
+  getWelcomeUserTemplate
 } from "../docs/emails/auth";
 
 export class User {
@@ -57,16 +58,19 @@ export class User {
       if (!isValidPasswprd) {
         throw new Error("Contraseña incorrecta");
       }
+
       const tokenPayload: TokenPayload = {
         id: user.id_user!,
         email: user.email,
       };
       const token = Utils.generate_token(tokenPayload);
-      const resp = {
-        user,
+      
+      const { password: _, ...userWithoutPassword } = user;
+
+      return {
+        user: userWithoutPassword,
         token,
       };
-      return resp;
     } catch (error) {}
   }
 
@@ -93,8 +97,6 @@ export class User {
         "Recuperación de Contraseña",
         getPasswordResetTemplate(user.name, resetLink, token),
       );
-
-      console.log(emailSent);
 
       if (!emailSent) {
         throw new Error("Error al enviar el correo de recuperación");
@@ -128,7 +130,7 @@ export class User {
   async getUserByEmail(email: string): Promise<IUser> {
     try {
       const [result]: any[] = await this.db.query(
-        "SELECT id_user, email, password, i_rol, dt_register, dt_updated, name,lastname FROM users WHERE email = ? LIMIT 1",
+        "SELECT id_user, email, password, i_rol, dt_register, dt_updated, name, lastname, id_client FROM users WHERE email = ? LIMIT 1",
         [email],
       );
       const user_finded = result[0];
@@ -199,8 +201,8 @@ export class User {
       const query = `
         SELECT * FROM users
         WHERE reset_password_token = ?
-        AND reset_password_expires > NOW()
       `;
+
       const rows = await this.db.select<RowDataPacket[]>(query, [token]);
       return (rows[0] as IUser) || null;
     } catch (error) {
@@ -217,5 +219,69 @@ export class User {
       WHERE id_user = ?
     `;
     await this.db.query(query, [hashedPassword, userId]);
+  }
+
+  async createUserInClient(name: string, lastname: string, email: string, id_client: number, id_user_creator: number) {
+    try {
+
+      const existingUser = await this.db.select<RowDataPacket[]>(
+        "SELECT id_user FROM users WHERE email = ?",
+        [email]
+      );
+
+      if (existingUser.length > 0) {
+        throw new Error("El correo electrónico ya está registrado");
+      }
+
+      let commit = false;
+
+      if (!this.db.inTransaction) {
+        await this.db.beginTransaction();
+        commit = true;
+      }
+
+      const query = `
+        INSERT INTO users (name, lastname, email, id_client, id_user_creator, password)
+        VALUES (?, ?, ?, ?, ?, "")
+      `;
+      await this.db.query(query, [name, lastname, email, id_client, id_user_creator]);
+
+      if (commit) {
+        await this.db.commit();
+      }
+
+      const userId = (await this.db.select<RowDataPacket[]>("SELECT LAST_INSERT_ID() AS id"))[0].id;
+      await Utils.registerUserLog(this.db, userId, `Usuario creado en cliente ID: ${id_client}`);
+      
+
+      // Obtener datos del usuario y cliente
+      const user = await this.getUserById(userId);
+      const client = await new Client().getClientById(id_client);
+
+      // Generar token para configurar contraseña (reutiliza tu lógica de reset)
+      const token = Utils.generate_token({
+        id: user.id_user!,
+        email: user.email,
+      });
+      const expiresAt = new Date(Date.now() + 3600000);
+      await this.updateResetToken(user.id_user!, token, expiresAt);
+      const setupPasswordLink = `${process.env.FRONTEND_URL}/restore-pwd?token=${token}`;
+
+      // Enviar email de bienvenida
+      await Utils.sendEmail(
+        email,
+        `Bienvenido a RetaiLink - ${client!.name}`,
+        getWelcomeUserTemplate(
+          `${user.name} ${user.lastname}`,
+          client!.name,
+          email,
+          setupPasswordLink
+        ),
+      );
+
+      return user;
+    } catch (error) {
+      throw error;
+    }
   }
 }

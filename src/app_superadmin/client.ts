@@ -76,4 +76,15 @@ export class Client {
             throw error;
         }
     }
+
+    async getClientById(id_client: number) {
+        try {
+            const query = `SELECT id_client, id_user, name, i_status, dt_register, dt_updated, rfc, email, phone, address, city, adiccional_notes FROM clients WHERE id_client = ?`;
+            const clients = await this.db.select(query, [id_client]);
+            return clients.length > 0 ? clients[0] : null;
+        } catch (error) {
+            console.error("Error en getClientById: ", error);
+            throw error;
+        }
+    }
 }

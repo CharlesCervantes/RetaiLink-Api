@@ -164,3 +164,151 @@ export const getPasswordChangedTemplate = (userName: string): string => {
     </html>
   `;
 };
+
+export const getWelcomeUserTemplate = (
+  userName: string,
+  clientName: string,
+  userEmail: string,
+  setupPasswordLink: string,
+): string => {
+  return `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Bienvenido a Promotoria</title>
+      <style>
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          line-height: 1.6;
+          color: #1f2937;
+          max-width: 520px;
+          margin: 0 auto;
+          padding: 40px 20px;
+          background-color: #f9fafb;
+        }
+        .container {
+          background-color: #ffffff;
+          border-radius: 12px;
+          padding: 40px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .logo {
+          text-align: center;
+          margin-bottom: 32px;
+        }
+        .logo h1 {
+          font-size: 24px;
+          font-weight: 700;
+          color: #111827;
+          margin: 0;
+        }
+        .logo span {
+          color: #3b82f6;
+        }
+        h2 {
+          font-size: 20px;
+          font-weight: 600;
+          color: #111827;
+          margin: 0 0 16px 0;
+        }
+        p {
+          margin: 0 0 16px 0;
+          color: #4b5563;
+        }
+        .client-badge {
+          display: inline-block;
+          background-color: #eff6ff;
+          color: #1d4ed8;
+          padding: 6px 12px;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 500;
+          margin-bottom: 24px;
+        }
+        .credentials {
+          background-color: #f9fafb;
+          border-radius: 8px;
+          padding: 20px;
+          margin: 24px 0;
+        }
+        .credentials p {
+          margin: 0;
+          font-size: 14px;
+        }
+        .credentials strong {
+          color: #111827;
+        }
+        .button {
+          display: block;
+          width: 100%;
+          padding: 14px 24px;
+          background-color: #111827;
+          color: #ffffff !important;
+          text-decoration: none;
+          border-radius: 8px;
+          font-weight: 500;
+          text-align: center;
+          margin: 24px 0;
+          box-sizing: border-box;
+        }
+        .link-fallback {
+          font-size: 12px;
+          color: #6b7280;
+          word-break: break-all;
+          margin-top: 16px;
+        }
+        .divider {
+          height: 1px;
+          background-color: #e5e7eb;
+          margin: 32px 0;
+        }
+        .footer {
+          text-align: center;
+          font-size: 12px;
+          color: #9ca3af;
+        }
+        .footer p {
+          margin: 4px 0;
+          color: #9ca3af;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="logo">
+          <h1>Promotor<span>ia</span></h1>
+        </div>
+
+        <h2>¡Bienvenido, ${userName}!</h2>
+        
+        <div class="client-badge">
+          ${clientName}
+        </div>
+
+        <p>Tu cuenta ha sido creada exitosamente. Ahora formas parte del equipo en la plataforma Promotoria.</p>
+
+        <div class="credentials">
+          <p><strong>Tu correo de acceso:</strong> ${userEmail}</p>
+        </div>
+
+        <p>Para comenzar, configura tu contraseña haciendo clic en el siguiente botón:</p>
+
+        <a href="${setupPasswordLink}" class="button">Configurar mi contraseña</a>
+
+        <p class="link-fallback">
+          Si el botón no funciona, copia este enlace: ${setupPasswordLink}
+        </p>
+
+        <div class="divider"></div>
+
+        <div class="footer">
+          <p>Este enlace expirará en 24 horas.</p>
+          <p>&copy; ${new Date().getFullYear()} Promotoria. Todos los derechos reservados.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+};
