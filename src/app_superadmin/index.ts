@@ -125,66 +125,30 @@ superAdminRouter.post(
   },
 );
 
-superAdminRouter.post(
-  "/create-store",
-  async (req: Request, res: Response): Promise<void> => {
-    let storeModel: Store | null = null;
-    try {
-      const {
-        id_user,
-        name,
-        store_code,
-        street,
-        ext_number,
-        int_number,
-        neighborhood,
-        municipality,
-        state,
-        postal_code,
-        country,
-        latitude,
-        longitude,
-      } = req.body;
+superAdminRouter.post("/stores", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_user, name, ...storeData } = req.body;
 
-      if (!id_user || !name) {
-        res.status(400).json({ error: "id_user y name son requeridos" });
-        return;
-      }
-
-      storeModel = getStoreModel();
-      const newStore: IStore = {
-        id_store: 0,
-        id_user: id_user,
-        name: name,
-        store_code: store_code,
-        street: street,
-        ext_number: ext_number,
-        int_number: int_number,
-        neighborhood: neighborhood,
-        municipality: municipality,
-        state: state,
-        postal_code: postal_code,
-        country: country,
-        latitude: latitude,
-        longitude: longitude,
-        i_status: false,
-        dt_register: "",
-        dt_updated: "",
-      };
-
-      const result = await storeModel.createStore(id_user, newStore);
-      res.status(201).json({
-        message: "Super admin creo tienda correctamente",
-        data: result,
-      });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Error creando tienda", details: error });
-    } finally {
-      storeModel = null;
+    if (!id_user || !name) {
+      res.status(400).json({ error: "id_user y name son requeridos" });
+      return;
     }
-  },
-);
+
+    const storeModel = getStoreModel();
+    const result = await storeModel.createStore(id_user, { name, ...storeData } as IStore);
+
+    res.status(201).json({
+      message: "Tienda creada exitosamente",
+      data: result,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "Error creando tienda",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
 
 superAdminRouter.post(
   "/create-question",
@@ -315,43 +279,217 @@ superAdminRouter.get("/get_client/:id", async (req: Request, res: Response): Pro
   },
 );
 
-// // Negocio
-// promotorRouter.post('/create-negocio', authMiddleware, (req, res) => {crear_negocio(req, res)});
-// promotorRouter.get('/get-negocio/:id', authMiddleware, (req, res) => {obtener_negocio(req, res)});
-// promotorRouter.get('/get-all-negocios', authMiddleware, (req, res) => {obtener_lista_negocios(req, res)});
-// promotorRouter.put('/update-negocio/:id', authMiddleware, (req, res) => {actualizar_negocio(req, res)});
-// promotorRouter.delete('/delete-negocio/:id', authMiddleware, (req, res) => {eliminar_negocio(req, res)});
+// Obtener todas las tiendas
+superAdminRouter.get("/stores", async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const storeModel = getStoreModel();
+    const stores = await storeModel.getStores();
 
-// // Usuarios
-//
-// promotorRouter.post('/login-user', (req, res) => {login_usuario(req, res)});
-// promotorRouter.get('/get-user/:id', authMiddleware, (req, res) => {obtener_usuario(req, res)});
-// promotorRouter.get('/get-all-users', authMiddleware, (req, res) => {obtener_lista_usuarios(req, res)});
-// promotorRouter.put('/update-user/:id', authMiddleware, (req, res) => {actualizar_usuario(req, res)});
-// promotorRouter.delete('/delete-user/:id', authMiddleware, (req, res) => {eliminar_usuario(req, res)});
+    res.status(200).json({
+      message: "Tiendas obtenidas exitosamente",
+      data: stores,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "Error obteniendo tiendas",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
 
-// // Establecimientos
-// promotorRouter.post('/create-establecimiento', authMiddleware, (req, res) => {createEstablecimiento(req, res)});
-// promotorRouter.get('/get-establecimiento/:id', authMiddleware, (req, res) => {getEstablecimiento(req, res)});
-// promotorRouter.get('/get-all-establecimientos', authMiddleware, (req, res) => {getAllEstablecimientos(req, res)});
-// promotorRouter.put('/update-establecimiento/:id', authMiddleware, (req, res) => {updateEstablecimiento(req, res)});
-// promotorRouter.delete('/delete-establecimiento/:id', authMiddleware, (req, res) => {deleteEstablecimiento(req, res)});
-// promotorRouter.post('/conectar-establecimiento-negocio', authMiddleware, (req, res) => {conectarEstablecimientoNegocio(req, res)});
-// promotorRouter.post('/desconectar-establecimiento-negocio', authMiddleware, (req, res) => {desconectarEstablecimientoNegocio(req, res)});
+// Obtener tienda por ID
+superAdminRouter.get("/stores/:id_store", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_store } = req.params;
 
-// // Preguntas
-// promotorRouter.post('/create-pregunta', authMiddleware, (req, res) => {crear_pregunta(req, res)});
-// promotorRouter.get('/get-pregunta/:id', authMiddleware, (req, res) => {obtener_pregunta_por_id(req, res)});
-// promotorRouter.get('/get-all-preguntas', authMiddleware, (req, res) => {obtener_todas_preguntas(req, res)});
-// promotorRouter.put('/update-pregunta/:id', authMiddleware, (req, res) => {actualizar_pregunta(req, res)});
-// promotorRouter.delete('/delete-pregunta/:id', authMiddleware, (req, res) => {eliminar_pregunta(req, res)});
-// promotorRouter.get('/get-preguntas-por-tipo/:tipo', authMiddleware, (req, res) => {obtener_preguntas_por_tipo(req, res)});
-// promotorRouter.get('/get-preguntas-por-evidencia/:evidencia', authMiddleware, (req, res) => {obtener_preguntas_por_evidencia(req, res)});
+    const storeModel = getStoreModel();
+    const store = await storeModel.getStoreById(Number(id_store));
 
-// // Preguntas Negocio
-// promotorRouter.post('/create-pregunta-negocio', authMiddleware, (req, res) => {crear_pregunta_negocio(req, res)});
-// promotorRouter.get('/get-preguntas-negocio/:id_negocio', authMiddleware, (req, res) => {obtener_preguntas_negocio(req, res)});
-// promotorRouter.put('/update-pregunta-negocio/:id', authMiddleware, (req, res) => {actualizar_pregunta_negocio(req, res)});
-// promotorRouter.delete('/delete-pregunta-negocio/:id', authMiddleware, (req, res) => {eliminar_pregunta_negocio(req, res)});
+    if (!store) {
+      res.status(404).json({ error: "Tienda no encontrada" });
+      return;
+    }
+
+    res.status(200).json({
+      message: "Tienda obtenida exitosamente",
+      data: store,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "Error obteniendo tienda",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+// Actualizar tienda
+superAdminRouter.put("/stores/:id_store", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_store } = req.params;
+    const { id_user, ...updateData } = req.body;
+
+    if (!id_user) {
+      res.status(400).json({ error: "id_user es requerido" });
+      return;
+    }
+
+    const storeModel = getStoreModel();
+    const result = await storeModel.updateStore(Number(id_store), id_user, updateData);
+
+    res.status(200).json({
+      message: result.message,
+      success: result.success,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "Error actualizando tienda",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+// Eliminar tienda (soft delete)
+superAdminRouter.delete("/stores/:id_store", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_store } = req.params;
+    const { id_user } = req.body;
+
+    if (!id_user) {
+      res.status(400).json({ error: "id_user es requerido" });
+      return;
+    }
+
+    const storeModel = getStoreModel();
+    const result = await storeModel.deleteStore(Number(id_store), id_user);
+
+    res.status(200).json({
+      message: result.message,
+      success: result.success,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "Error eliminando tienda",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+superAdminRouter.post("/stores/:id_store/clients/:id_client", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_store, id_client } = req.params;
+    const { id_user_creator } = req.body;
+
+    if (!id_user_creator) {
+      res.status(400).json({ error: "id_user_creator es requerido" });
+      return;
+    }
+
+    const storeModel = getStoreModel();
+    const result = await storeModel.assignStoreToClient(
+      Number(id_store),
+      Number(id_client),
+      id_user_creator
+    );
+
+    res.status(201).json({
+      message: result.message,
+      data: result,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "Error asignando tienda al cliente",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+// Desasignar tienda de cliente
+superAdminRouter.delete("/stores/:id_store/clients/:id_client", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_store, id_client } = req.params;
+
+    const storeModel = getStoreModel();
+    const result = await storeModel.removeStoreFromClient(Number(id_store), Number(id_client));
+
+    res.status(200).json({
+      message: result.message,
+      success: result.success,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "Error desasignando tienda del cliente",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+// Obtener tiendas de un cliente
+superAdminRouter.get("/stores/clients/:id_client", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_client } = req.params;
+
+    const storeModel = getStoreModel();
+    const stores = await storeModel.getStoresByClient(Number(id_client));
+
+    res.status(200).json({
+      message: "Tiendas del cliente obtenidas exitosamente",
+      data: stores,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "Error obteniendo tiendas del cliente",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+// Obtener clientes de una tienda
+superAdminRouter.get("/stores/:id_store/clients/", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_store } = req.params;
+
+    const storeModel = getStoreModel();
+    const clients = await storeModel.getClientsByStore(Number(id_store));
+
+    res.status(200).json({
+      message: "Clientes de la tienda obtenidos exitosamente",
+      data: clients,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "Error obteniendo clientes de la tienda",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+// Obtener tiendas disponibles para asignar a un cliente
+superAdminRouter.get("/stores/clients/available-stores/:id_client", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_client } = req.params;
+
+    const storeModel = getStoreModel();
+    const stores = await storeModel.getAvailableStoresForClient(Number(id_client));
+
+    res.status(200).json({
+      message: "Tiendas disponibles obtenidas exitosamente",
+      data: stores,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "Error obteniendo tiendas disponibles",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
 
 export default superAdminRouter;

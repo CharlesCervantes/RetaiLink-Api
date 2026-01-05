@@ -1,6 +1,7 @@
 import { Storage } from "@google-cloud/storage";
 import sharp from "sharp";
 
+
 const storage = new Storage({
   projectId: process.env.GCP_PROJECT_ID,
   keyFilename: process.env.GCP_KEY_FILE,

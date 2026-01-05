@@ -31,6 +31,8 @@ RUN npm install --only=production
 # Copy the built application from the build stage
 COPY --from=build /app/dist ./dist
 
+COPY --from=build /app/keys ./keys
+
 EXPOSE 3000
 
 CMD ["node", "dist/index.js"]

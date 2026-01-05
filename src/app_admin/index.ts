@@ -311,4 +311,6 @@ adminRouter.delete("/products/:id_product", async (req: Request, res: Response):
   }
 });
 
+
+
 export default adminRouter;
