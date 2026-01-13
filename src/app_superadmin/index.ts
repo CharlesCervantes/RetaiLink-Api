@@ -263,7 +263,7 @@ superAdminRouter.get("/get_client/:id", async (req: Request, res: Response): Pro
     let clientModel: Client | null = null;
     try {
       clientModel = getClientModel();
-      const result = await clientModel.getClientById(parseInt(req.params.id));
+      const result = await clientModel.getClientById(Number(req.params.id));
       res.status(200).json({
         message: "Cliente obtenido correctamente",
         data: result,
@@ -418,7 +418,7 @@ superAdminRouter.delete("/stores/:id_store/clients/:id_client", async (req: Requ
 
     res.status(200).json({
       message: result.message,
-      success: result.success,
+      ok: result.ok,
     });
   } catch (error) {
     console.error(error);

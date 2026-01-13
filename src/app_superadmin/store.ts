@@ -5,7 +5,7 @@ import { Database } from '../core/database';
 import { Utils } from '../core/utils';
 
 export class Store {
-  private db: Database = db;
+  protected db: Database = db;
 
   constructor() {}
 
@@ -190,7 +190,7 @@ export class Store {
       `;
       await this.db.execute(query, [id_store, id_client]);
 
-      return { success: true, message: "Tienda desasignada del cliente exitosamente" };
+      return { ok: true, data: null, message: "Tienda desasignada del cliente exitosamente" };
     } catch (error) {
       console.error("Error en removeStoreFromClient: ", error);
       throw error;
@@ -252,5 +252,6 @@ export class Store {
       console.error("Error en getAvailableStoresForClient: ", error);
       throw error;
     }
-  }
+  } 
+
 }

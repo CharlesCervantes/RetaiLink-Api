@@ -1,13 +1,15 @@
 import express, { Router, Request, Response } from "express";
 
 import { UserAdmin } from "./userAdmin";
-import { productAdmin } from "./productAdmin"
+import { productAdmin } from "./productAdmin";
+import { storesAdmin, CreateStorepayload } from './storesAdmin';
 
 import { upload } from '../core/middleware/upload.middleware';
 
 const adminRouter: Router = express.Router();
 const getAdminUser = () => new UserAdmin();
 const getAdminProduct = () => new productAdmin();
+const getAdminStore = () => new storesAdmin(); 
 
 adminRouter.post(
   "/login",
@@ -311,6 +313,209 @@ adminRouter.delete("/products/:id_product", async (req: Request, res: Response):
   }
 });
 
+adminRouter.post("/store", async(req: Request, res: Response): Promise<void> => {
+  try {
 
+    const { 
+      id_client, 
+      id_user_creator, 
+      name,
+      store_code,
+      street,
+      ext_number,
+      int_number,
+      neighborhood,
+      municipality,
+      state,
+      postal_code,
+      country,
+      latitude,
+      longitude
+    } = req.body
+
+
+    const store_payload: CreateStorepayload = {
+      id_client: parseInt(id_client),
+      id_user_creator: parseInt(id_user_creator),
+      name,
+      store_code,
+      street,
+      ext_number,
+      int_number,
+      neighborhood,
+      municipality,
+      state,
+      postal_code,
+      country,
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude)
+    }
+
+    const storeModel = getAdminStore();
+    const result = await storeModel.createStoreAdmin(store_payload);
+
+    res.status(200).json({
+      ok: true,
+      message: "Establecimiento creado exitosamente",
+      data: result,
+    });
+    
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      ok: false,
+      message: "Error eliminando producto",
+      data: error instanceof Error ? error.message : String(error),
+    });
+  }
+})
+
+adminRouter.get("/stores/:id_client", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client } = req.params;
+
+        const storeModel = getAdminStore();
+        const result = await storeModel.getStoresForClient(Number(id_client));
+
+        res.status(200).json({
+            ok: true,
+            message: "Establecimientos obtenidos exitosamente",
+            data: result,
+        });
+        
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            ok: false,
+            message: "Error obteniendo establecimientos",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+adminRouter.get("/store-client/:id_store_client", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_store_client } = req.params;
+
+        const storeModel = getAdminStore();
+        const result = await storeModel.getStoreByIdClient(Number(id_store_client));
+
+        if (!result) {
+            res.status(404).json({
+                ok: false,
+                message: "Establecimiento no encontrado",
+                data: null,
+            });
+            return;
+        }
+
+        res.status(200).json({
+            ok: true,
+            message: "Establecimiento obtenido exitosamente",
+            data: result.data,
+        });
+        
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            ok: false,
+            message: "Error obteniendo establecimiento",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// PUT - Actualizar establecimiento
+adminRouter.put("/store-client/:id_store_client", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_store_client } = req.params;
+        const { 
+            id_client, 
+            id_user_creator, 
+            name,
+            store_code,
+            street,
+            ext_number,
+            int_number,
+            neighborhood,
+            municipality,
+            state,
+            postal_code,
+            country,
+            latitude,
+            longitude
+        } = req.body;
+
+        const store_payload: CreateStorepayload = {
+            id_store_client: Number(id_store_client),
+            id_client: Number(id_client),
+            id_user_creator: Number(id_user_creator),
+            name,
+            store_code,
+            street,
+            ext_number,
+            int_number,
+            neighborhood,
+            municipality,
+            state,
+            postal_code,
+            country,
+            latitude: parseFloat(latitude),
+            longitude: parseFloat(longitude)
+        };
+
+        console.log("update payload", store_payload)
+
+        const storeModel = getAdminStore();
+        const result = await storeModel.updateStoreForClient(store_payload);
+
+        console.log("update result: ", result);
+
+        res.status(200).json({
+            ok: true,
+            message: "Establecimiento actualizado exitosamente",
+            data: result,
+        });
+        
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            ok: false,
+            message: "Error actualizando establecimiento",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+adminRouter.delete("/store-client/:id_store_client", async(req: Request, res: Response) => {
+  try {
+    const { id_store_client } = req.params;
+
+    const storeModel = getAdminStore();
+    const result = await storeModel.deleteStoreForClient(Number(id_store_client));
+
+    if (!result) {
+      res.status(404).json({
+        ok: false,
+        message: "Establecimiento no encontrado",
+        data: null,
+      });
+      return;
+    }
+
+    res.status(200).json({
+      ok: true,
+      message: "Establecimiento eliminado exitosamente",
+      data: result.data,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      ok: false,
+      message: "Error eliminando establecimiento",
+      data: error instanceof Error ? error.message : String(error),
+    });
+  } 
+});
 
 export default adminRouter;
