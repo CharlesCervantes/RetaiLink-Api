@@ -219,5 +219,116 @@ export class storesAdmin extends Store {
             console.log("f.deleteStoreForClient: ", error);
         }
     }
+
+    async importStoresFromExcel(id_client: number, id_user: number, rows: any[]) {
+        let inserted = 0;
+        let errors: { row: number; error: string }[] = [];
+        let geocoded = 0;
+
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+
+            try {
+                const store = {
+                    name: row.Nombre || row.nombre || row.name || "",
+                    store_code: row.Codigo || row.codigo || row.store_code || "",
+                    street: row.Calle || row.calle || row.street || "",
+                    ext_number: row.Numero_Ext || row.numero_ext || row.ext_number || "",
+                    int_number: row.Numero_Int || row.numero_int || row.int_number || "",
+                    neighborhood: row.Colonia || row.colonia || row.neighborhood || "",
+                    municipality: row.Municipio || row.municipio || row.municipality || "",
+                    state: row.Estado || row.estado || row.state || "",
+                    postal_code: row.CP || row.cp || row.codigo_postal || row.postal_code || "",
+                    country: row.Pais || row.pais || row.country || "México",
+                    latitude: parseFloat(row.Latitud || row.latitud || row.latitude) || null,
+                    longitude: parseFloat(row.Longitud || row.longitud || row.longitude) || null,
+                };
+
+                // Validar campos requeridos
+                if (!store.name || !store.street || !store.municipality) {
+                    errors.push({ row: i + 2, error: "Faltan campos requeridos (nombre, calle, municipio)" });
+                    continue;
+                }
+
+                // Si no hay coordenadas, usar Geocoding
+                if (!store.latitude || !store.longitude) {
+                    const fullAddress = [
+                        store.street,
+                        store.ext_number,
+                        store.neighborhood,
+                        store.municipality,
+                        store.state,
+                        store.postal_code,
+                        store.country
+                    ].filter(Boolean).join(", ");
+
+                    console.log(`Geocoding fila ${i + 2}: ${fullAddress}`);
+
+                    const geoResult = await Utils.geocodeAddress(fullAddress);
+                    
+                    if (geoResult.latitude && geoResult.longitude) {
+                        store.latitude = geoResult.latitude;
+                        store.longitude = geoResult.longitude;
+                        geocoded++;
+                    } else {
+                        // Opcional: puedes decidir si insertar sin coordenadas o marcarlo como error
+                        console.log(`No se encontraron coordenadas para fila ${i + 2}`);
+                    }
+
+                    // Pequeña pausa para no saturar la API (Google tiene límites)
+                    await Utils.sleep(100); // 100ms entre cada geocoding
+                }
+
+                // Insertar store
+                const query_store = `
+                    INSERT INTO stores (id_user, name, store_code, street, ext_number, int_number, 
+                        neighborhood, municipality, state, postal_code, country, latitude, longitude, i_status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                `;
+
+                const result_store = await this.db.execute(query_store, [
+                    id_user,
+                    store.name,
+                    store.store_code,
+                    store.street,
+                    store.ext_number,
+                    store.int_number,
+                    store.neighborhood,
+                    store.municipality,
+                    store.state,
+                    store.postal_code,
+                    store.country,
+                    store.latitude,
+                    store.longitude
+                ]);
+
+                const id_store = result_store.insertId;
+
+                // Insertar relación store_client
+                const query_client = `
+                    INSERT INTO stores_clients (id_client, id_store, i_status, id_user_creator)
+                    VALUES (?, ?, 1, ?)
+                `;
+                await this.db.execute(query_client, [id_client, id_store, id_user]);
+
+                // Log
+                await Utils.registerStoreLog(this.db, id_store, id_user, "Tienda creada desde importación Excel");
+
+                inserted++;
+
+            } catch (error) {
+                console.error(`Error en fila ${i + 2}:`, error);
+                errors.push({ row: i + 2, error: error instanceof Error ? error.message : String(error) });
+            }
+        }
+
+        return {
+            total: rows.length,
+            inserted,
+            geocoded, // Cuántas direcciones se geocodificaron
+            failed: errors.length,
+            errors: errors.slice(0, 10)
+        };
+    }
 }
 

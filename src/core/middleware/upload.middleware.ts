@@ -11,3 +11,26 @@ export const upload = multer({
     }
   },
 });
+
+export const uploadExcel = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB para Excel
+    fileFilter: (_req, file, cb) => {
+        const validMimeTypes = [
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+            "application/vnd.ms-excel", // .xls
+        ];
+
+        if (validMimeTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error("Solo se permiten archivos Excel (.xlsx, .xls)"));
+        }
+    },
+});
+
+// Genérico (acepta cualquier archivo)
+export const uploadAny = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 },
+});

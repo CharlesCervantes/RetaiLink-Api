@@ -1,10 +1,11 @@
 import express, { Router, Request, Response } from "express";
+import * as XLSX from "xlsx";
 
 import { UserAdmin } from "./userAdmin";
 import { productAdmin } from "./productAdmin";
 import { storesAdmin, CreateStorepayload } from './storesAdmin';
 
-import { upload } from '../core/middleware/upload.middleware';
+import { upload, uploadExcel } from '../core/middleware/upload.middleware';
 
 const adminRouter: Router = express.Router();
 const getAdminUser = () => new UserAdmin();
@@ -516,6 +517,63 @@ adminRouter.delete("/store-client/:id_store_client", async(req: Request, res: Re
       data: error instanceof Error ? error.message : String(error),
     });
   } 
+});
+
+adminRouter.post("/stores/import-excel", uploadExcel.single("file"), async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client, id_user } = req.body;
+        const file = req.file;
+
+        if (!file) {
+            res.status(400).json({
+                ok: false,
+                message: "No se recibió ningún archivo",
+            });
+            return;
+        }
+
+        if (!id_client || !id_user) {
+            res.status(400).json({
+                ok: false,
+                message: "Faltan parámetros: id_client o id_user",
+            });
+            return;
+        }
+
+        // Leer Excel desde el buffer (memoria)
+        const workbook = XLSX.read(file.buffer, { type: "buffer" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        
+        // Convertir a JSON
+        const data: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+        if (data.length === 0) {
+            res.status(400).json({
+                ok: false,
+                message: "El archivo Excel está vacío",
+            });
+            return;
+        }
+
+        // Procesar e insertar
+        const storeModel = getAdminStore();
+        const result = await storeModel.importStoresFromExcel(parseInt(id_client), parseInt(id_user), data);
+
+        res.status(200).json({
+            ok: true,
+            message: `Se importaron ${result.inserted} establecimientos correctamente`,
+            data: result,
+        });
+
+    } catch (error) {
+        console.error("Error importando Excel:", error);
+        res.status(500).json({
+            ok: false,
+            message: "Error procesando archivo Excel",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
 });
 
 export default adminRouter;

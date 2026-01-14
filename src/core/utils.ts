@@ -35,6 +35,12 @@ export function generarCodigoAfiliacion(): string {
   return codigo;
 }
 
+interface GeocodingResult {
+    latitude: number | null;
+    longitude: number | null;
+    formatted_address?: string;
+}
+
 export class Utils {
   emailService: EmailService;
 
@@ -271,5 +277,37 @@ export class Utils {
       console.error("Error al enviar email:", error);
       return false;
     }
+  }
+
+  static async geocodeAddress(address: string): Promise<GeocodingResult> {
+    try {
+      const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+      const encodedAddress = encodeURIComponent(address);
+      
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`;
+      
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.status === "OK" && data.results.length > 0) {
+        const location = data.results[0].geometry.location;
+        return {
+          latitude: location.lat,
+          longitude: location.lng,
+          formatted_address: data.results[0].formatted_address
+        };
+      }
+
+      console.log("Geocoding no encontró resultados para:", address);
+      return { latitude: null, longitude: null };
+
+    } catch (error) {
+      console.error("Error en geocoding:", error);
+      return { latitude: null, longitude: null };
+    }
+  }
+
+  static sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
