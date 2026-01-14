@@ -286,12 +286,14 @@ superAdminRouter.get("/stores", async (_req: Request, res: Response): Promise<vo
     const stores = await storeModel.getStores();
 
     res.status(200).json({
+      ok: true,
       message: "Tiendas obtenidas exitosamente",
       data: stores,
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({
+      ok: false,
       error: "Error obteniendo tiendas",
       details: error instanceof Error ? error.message : String(error),
     });
