@@ -54,8 +54,8 @@ export class User {
   async loginSuperAdmin(email: string, password: string) {
     try {
       const user = await this.getUserByEmail(email);
-      const isValidPasswprd = Utils.compare_password(password, user.password);
-      if (!isValidPasswprd) {
+      const isValidPassword = await Utils.compare_password(password, user.password);
+      if (!isValidPassword) {
         throw new Error("Contraseña incorrecta");
       }
 
@@ -64,14 +64,22 @@ export class User {
         email: user.email,
       };
       const token = Utils.generate_token(tokenPayload);
-      
+
+      await Utils.registerUserLog(
+        this.db,
+        user.id_user!,
+        "Usuario inició sesión"
+      );
+
       const { password: _, ...userWithoutPassword } = user;
 
       return {
         user: userWithoutPassword,
         token,
       };
-    } catch (error) {}
+    } catch (error) {
+      throw error;
+    }
   }
 
   async restorePassword(email: string) {
@@ -173,14 +181,17 @@ export class User {
 
       await this.updatePassword(user_data.id_user, hashedPassword);
 
-      const mailOptions = {
-        from: `"Tu Empresa" <${process.env.GMAIL_USER}>`,
-        to: user_data.email,
-        subject: "Contraseña Actualizada",
-        html: getPasswordChangedTemplate(user_data.name),
-      };
-      const transporter = Utils.generate_email_transporter();
-      await transporter.sendMail(mailOptions);
+      await Utils.sendEmail(
+        user_data.email,
+        "Contraseña Actualizada",
+        getPasswordChangedTemplate(user_data.name),
+      );
+
+      await Utils.registerUserLog(
+        this.db,
+        user_data.id_user,
+        "Contraseña restablecida exitosamente"
+      );
 
       return {
         message: "Contraseña actualizada exitosamente",

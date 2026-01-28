@@ -4,13 +4,23 @@ import * as XLSX from "xlsx";
 import { UserAdmin } from "./userAdmin";
 import { productAdmin } from "./productAdmin";
 import { storesAdmin, CreateStorepayload } from './storesAdmin';
+import { QuestionAdmin } from './questionAdmin';
+import { QuotationAdmin } from './quotationAdmin';
+import { ServiceOrderAdmin } from './serviceOrderAdmin';
+import { ServiceAdmin } from './serviceAdmin';
 
 import { upload, uploadExcel } from '../core/middleware/upload.middleware';
+
+import { CreateServicePayload } from "../core/interfaces/service";
 
 const adminRouter: Router = express.Router();
 const getAdminUser = () => new UserAdmin();
 const getAdminProduct = () => new productAdmin();
-const getAdminStore = () => new storesAdmin(); 
+const getAdminStore = () => new storesAdmin();
+const getAdminQuestion = () => new QuestionAdmin();
+const getAdminQuotation = () => new QuotationAdmin();
+const getAdminServiceOrder = () => new ServiceOrderAdmin();
+const getAdminService = () => new ServiceAdmin();
 
 adminRouter.post(
   "/login",
@@ -262,15 +272,20 @@ adminRouter.post(
 adminRouter.put("/products/:id_product", async (req: Request, res: Response): Promise<void> => {
   try {
     const { id_product } = req.params;
-    const { name, description } = req.body;
+    const { id_user, name, description } = req.body;
 
     if (!id_product) {
       res.status(400).json({ error: "id_product es requerido" });
       return;
     }
 
+    if (!id_user) {
+      res.status(400).json({ error: "id_user es requerido" });
+      return;
+    }
+
     const productModel = getAdminProduct();
-    const result = await productModel.updateProduct(Number(id_product), {
+    const result = await productModel.updateProduct(Number(id_product), id_user, {
       name,
       description,
     });
@@ -292,14 +307,20 @@ adminRouter.put("/products/:id_product", async (req: Request, res: Response): Pr
 adminRouter.delete("/products/:id_product", async (req: Request, res: Response): Promise<void> => {
   try {
     const { id_product } = req.params;
+    const { id_user } = req.body;
 
     if (!id_product) {
       res.status(400).json({ error: "id_product es requerido" });
       return;
     }
 
+    if (!id_user) {
+      res.status(400).json({ error: "id_user es requerido" });
+      return;
+    }
+
     const productModel = getAdminProduct();
-    const result = await productModel.deleteProduct(Number(id_product));
+    const result = await productModel.deleteProduct(Number(id_product), id_user);
 
     res.status(200).json({
       message: result.message,
@@ -465,12 +486,8 @@ adminRouter.put("/store-client/:id_store_client", async (req: Request, res: Resp
             longitude: parseFloat(longitude)
         };
 
-        console.log("update payload", store_payload)
-
         const storeModel = getAdminStore();
         const result = await storeModel.updateStoreForClient(store_payload);
-
-        console.log("update result: ", result);
 
         res.status(200).json({
             ok: true,
@@ -491,9 +508,19 @@ adminRouter.put("/store-client/:id_store_client", async (req: Request, res: Resp
 adminRouter.delete("/store-client/:id_store_client", async(req: Request, res: Response) => {
   try {
     const { id_store_client } = req.params;
+    const { id_user } = req.body;
+
+    if (!id_user) {
+      res.status(400).json({
+        ok: false,
+        message: "id_user es requerido",
+        data: null,
+      });
+      return;
+    }
 
     const storeModel = getAdminStore();
-    const result = await storeModel.deleteStoreForClient(Number(id_store_client));
+    const result = await storeModel.deleteStoreForClient(Number(id_store_client), id_user);
 
     if (!result) {
       res.status(404).json({
@@ -510,13 +537,12 @@ adminRouter.delete("/store-client/:id_store_client", async(req: Request, res: Re
       data: result.data,
     });
   } catch (error) {
-    console.error(error);
     res.status(500).json({
       ok: false,
       message: "Error eliminando establecimiento",
       data: error instanceof Error ? error.message : String(error),
     });
-  } 
+  }
 });
 
 adminRouter.post("/stores/import-excel", uploadExcel.single("file"), async (req: Request, res: Response): Promise<void> => {
@@ -571,6 +597,724 @@ adminRouter.post("/stores/import-excel", uploadExcel.single("file"), async (req:
         res.status(500).json({
             ok: false,
             message: "Error procesando archivo Excel",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// ==================== QUESTIONS (Solo lectura para Admin) ====================
+
+// Obtener todas las preguntas asignadas al cliente
+adminRouter.get("/questions/:id_client", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client } = req.params;
+
+        if (!id_client) {
+            res.status(400).json({
+                ok: false,
+                message: "id_client es requerido",
+            });
+            return;
+        }
+
+        const questionModel = getAdminQuestion();
+        const questions = await questionModel.getQuestionsForClient(Number(id_client));
+
+        res.status(200).json({
+            ok: true,
+            message: "Preguntas obtenidas exitosamente",
+            data: questions,
+        });
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error obteniendo preguntas",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// Obtener una pregunta específica asignada al cliente
+adminRouter.get("/questions/:id_client/:id_question_client", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client, id_question_client } = req.params;
+
+        if (!id_client || !id_question_client) {
+            res.status(400).json({
+                ok: false,
+                message: "id_client e id_question_client son requeridos",
+            });
+            return;
+        }
+
+        const questionModel = getAdminQuestion();
+        const result = await questionModel.getQuestionForClient(
+            Number(id_question_client),
+            Number(id_client)
+        );
+
+        if (!result.ok) {
+            res.status(404).json(result);
+            return;
+        }
+
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error obteniendo pregunta",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// Buscar preguntas del cliente por texto
+adminRouter.get("/questions/:id_client/search/:search_term", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client, search_term } = req.params;
+
+        if (!id_client || !search_term) {
+            res.status(400).json({
+                ok: false,
+                message: "id_client y search_term son requeridos",
+            });
+            return;
+        }
+
+        const questionModel = getAdminQuestion();
+        const questions = await questionModel.searchQuestionsForClient(
+            Number(id_client),
+            search_term
+        );
+
+        res.status(200).json({
+            ok: true,
+            message: "Búsqueda completada exitosamente",
+            data: questions,
+        });
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error buscando preguntas",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// Búsqueda por query param (alternativa más flexible)
+adminRouter.post("/questions/search", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client, search } = req.body;
+
+        if (!id_client) {
+            res.status(400).json({
+                ok: false,
+                message: "id_client es requerido",
+            });
+            return;
+        }
+
+        const questionModel = getAdminQuestion();
+
+        let questions;
+        if (search && search.trim() !== '') {
+            questions = await questionModel.searchQuestionsForClient(Number(id_client), search);
+        } else {
+            questions = await questionModel.getQuestionsForClient(Number(id_client));
+        }
+
+        res.status(200).json({
+            ok: true,
+            message: "Preguntas obtenidas exitosamente",
+            data: questions,
+        });
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error obteniendo preguntas",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// Obtener estadísticas de preguntas del cliente
+adminRouter.get("/questions/:id_client/stats", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client } = req.params;
+
+        if (!id_client) {
+            res.status(400).json({
+                ok: false,
+                message: "id_client es requerido",
+            });
+            return;
+        }
+
+        const questionModel = getAdminQuestion();
+        const stats = await questionModel.getQuestionStatsForClient(Number(id_client));
+
+        res.status(200).json({
+            ok: true,
+            message: "Estadísticas obtenidas exitosamente",
+            data: stats,
+        });
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error obteniendo estadísticas",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// ==================== QUOTATIONS (Cotizaciones) ====================
+
+// Crear cotización
+adminRouter.post("/quotations", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client, id_user, quotation_name, products, questions, stores } = req.body;
+
+        if (!id_client || !id_user || !quotation_name) {
+            res.status(400).json({
+                ok: false,
+                message: "id_client, id_user y quotation_name son requeridos",
+            });
+            return;
+        }
+
+        const quotationModel = getAdminQuotation();
+        const result = await quotationModel.createQuotation(id_user, {
+            id_client,
+            quotation_name,
+            products,
+            questions,
+            stores
+        });
+
+        res.status(201).json(result);
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error creando cotización",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// Obtener cotizaciones de un cliente
+adminRouter.get("/quotations/:id_client", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client } = req.params;
+
+        if (!id_client) {
+            res.status(400).json({
+                ok: false,
+                message: "id_client es requerido",
+            });
+            return;
+        }
+
+        const quotationModel = getAdminQuotation();
+        const quotations = await quotationModel.getQuotationsForClient(Number(id_client));
+
+        res.status(200).json({
+            ok: true,
+            message: "Cotizaciones obtenidas exitosamente",
+            data: quotations,
+        });
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error obteniendo cotizaciones",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// Obtener detalle de una cotización
+adminRouter.get("/quotations/:id_client/:id_quotation", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client, id_quotation } = req.params;
+
+        if (!id_client || !id_quotation) {
+            res.status(400).json({
+                ok: false,
+                message: "id_client e id_quotation son requeridos",
+            });
+            return;
+        }
+
+        const quotationModel = getAdminQuotation();
+        const result = await quotationModel.getQuotationById(
+            Number(id_quotation),
+            Number(id_client)
+        );
+
+        if (!result.ok) {
+            res.status(404).json(result);
+            return;
+        }
+
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error obteniendo cotización",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// Obtener preview de precios de una cotización
+adminRouter.get("/quotations/:id_client/:id_quotation/preview", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client, id_quotation } = req.params;
+
+        if (!id_client || !id_quotation) {
+            res.status(400).json({
+                ok: false,
+                message: "id_client e id_quotation son requeridos",
+            });
+            return;
+        }
+
+        const quotationModel = getAdminQuotation();
+        const result = await quotationModel.getQuotationPricePreview(
+            Number(id_quotation),
+            Number(id_client)
+        );
+
+        if (!result.ok) {
+            res.status(404).json(result);
+            return;
+        }
+
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error obteniendo preview de cotización",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// Actualizar cotización
+adminRouter.put("/quotations/:id_client/:id_quotation", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client, id_quotation } = req.params;
+        const { id_user, quotation_name, products, questions, stores, i_status } = req.body;
+
+        if (!id_client || !id_quotation || !id_user) {
+            res.status(400).json({
+                ok: false,
+                message: "id_client, id_quotation e id_user son requeridos",
+            });
+            return;
+        }
+
+        const quotationModel = getAdminQuotation();
+        const result = await quotationModel.updateQuotation(
+            Number(id_quotation),
+            Number(id_client),
+            id_user,
+            { quotation_name, products, questions, stores, i_status }
+        );
+
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error actualizando cotización",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// Eliminar cotización
+adminRouter.delete("/quotations/:id_client/:id_quotation", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client, id_quotation } = req.params;
+        const { id_user } = req.body;
+
+        if (!id_client || !id_quotation || !id_user) {
+            res.status(400).json({
+                ok: false,
+                message: "id_client, id_quotation e id_user son requeridos",
+            });
+            return;
+        }
+
+        const quotationModel = getAdminQuotation();
+        const result = await quotationModel.deleteQuotation(
+            Number(id_quotation),
+            Number(id_client),
+            id_user
+        );
+
+        if (!result.ok) {
+            res.status(404).json(result);
+            return;
+        }
+
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error eliminando cotización",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// Obtener logs de una cotización
+adminRouter.get("/quotations/:id_client/:id_quotation/logs", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client, id_quotation } = req.params;
+
+        if (!id_client || !id_quotation) {
+            res.status(400).json({
+                ok: false,
+                message: "id_client e id_quotation son requeridos",
+            });
+            return;
+        }
+
+        const quotationModel = getAdminQuotation();
+        const result = await quotationModel.getQuotationLogs(
+            Number(id_quotation),
+            Number(id_client)
+        );
+
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error obteniendo logs de cotización",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// ==================== SERVICE ORDERS (Órdenes de Servicio) ====================
+
+// Confirmar cotización y crear orden de servicio + tickets
+adminRouter.post("/service-orders/confirm", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_quotation, id_client, id_user } = req.body;
+
+        if (!id_quotation || !id_client || !id_user) {
+            res.status(400).json({
+                ok: false,
+                message: "id_quotation, id_client e id_user son requeridos",
+            });
+            return;
+        }
+
+        const serviceOrderModel = getAdminServiceOrder();
+        const result = await serviceOrderModel.confirmQuotationAndCreateOrder(
+            id_quotation,
+            id_client,
+            id_user
+        );
+
+        res.status(201).json(result);
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error confirmando cotización",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// Obtener órdenes de servicio de un cliente
+adminRouter.get("/service-orders/:id_client", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client } = req.params;
+
+        if (!id_client) {
+            res.status(400).json({
+                ok: false,
+                message: "id_client es requerido",
+            });
+            return;
+        }
+
+        const serviceOrderModel = getAdminServiceOrder();
+        const orders = await serviceOrderModel.getServiceOrdersForClient(Number(id_client));
+
+        res.status(200).json({
+            ok: true,
+            message: "Órdenes obtenidas exitosamente",
+            data: orders,
+        });
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error obteniendo órdenes",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// Obtener detalle de una orden de servicio
+adminRouter.get("/service-orders/:id_client/:id_service_order", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client, id_service_order } = req.params;
+
+        if (!id_client || !id_service_order) {
+            res.status(400).json({
+                ok: false,
+                message: "id_client e id_service_order son requeridos",
+            });
+            return;
+        }
+
+        const serviceOrderModel = getAdminServiceOrder();
+        const result = await serviceOrderModel.getServiceOrderById(
+            Number(id_service_order),
+            Number(id_client)
+        );
+
+        if (!result.ok) {
+            res.status(404).json(result);
+            return;
+        }
+
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error obteniendo orden",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// Marcar orden como pagada
+adminRouter.post("/service-orders/:id_client/:id_service_order/pay", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client, id_service_order } = req.params;
+        const { id_user } = req.body;
+
+        if (!id_client || !id_service_order || !id_user) {
+            res.status(400).json({
+                ok: false,
+                message: "id_client, id_service_order e id_user son requeridos",
+            });
+            return;
+        }
+
+        const serviceOrderModel = getAdminServiceOrder();
+        const result = await serviceOrderModel.markOrderAsPaid(
+            Number(id_service_order),
+            Number(id_client),
+            id_user
+        );
+
+        if (!result.ok) {
+            res.status(400).json(result);
+            return;
+        }
+
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error registrando pago",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// Obtener logs de una orden
+adminRouter.get("/service-orders/:id_client/:id_service_order/logs", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client, id_service_order } = req.params;
+
+        if (!id_client || !id_service_order) {
+            res.status(400).json({
+                ok: false,
+                message: "id_client e id_service_order son requeridos",
+            });
+            return;
+        }
+
+        const serviceOrderModel = getAdminServiceOrder();
+        const result = await serviceOrderModel.getServiceOrderLogs(
+            Number(id_service_order),
+            Number(id_client)
+        );
+
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error obteniendo logs de orden",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// Estadísticas de órdenes y tickets del cliente
+adminRouter.get("/service-orders/:id_client/stats", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client } = req.params;
+
+        if (!id_client) {
+            res.status(400).json({
+                ok: false,
+                message: "id_client es requerido",
+            });
+            return;
+        }
+
+        const serviceOrderModel = getAdminServiceOrder();
+        const stats = await serviceOrderModel.getServiceStatsForClient(Number(id_client));
+
+        res.status(200).json({
+            ok: true,
+            message: "Estadísticas obtenidas exitosamente",
+            data: stats,
+        });
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error obteniendo estadísticas",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// ==================== TICKETS ====================
+
+// Obtener todos los tickets de un cliente
+adminRouter.get("/tickets/:id_client", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client } = req.params;
+        const { ticket_status, id_store } = req.query;
+
+        if (!id_client) {
+            res.status(400).json({
+                ok: false,
+                message: "id_client es requerido",
+            });
+            return;
+        }
+
+        const serviceOrderModel = getAdminServiceOrder();
+        const tickets = await serviceOrderModel.getTicketsForClient(Number(id_client), {
+            ticket_status: ticket_status !== undefined ? Number(ticket_status) as 0 | 1 | 2 | 3 : undefined,
+            id_store: id_store !== undefined ? Number(id_store) : undefined,
+        });
+
+        res.status(200).json({
+            ok: true,
+            message: "Tickets obtenidos exitosamente",
+            data: tickets,
+        });
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error obteniendo tickets",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// Obtener detalle de un ticket
+adminRouter.get("/tickets/:id_client/:id_ticket", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client, id_ticket } = req.params;
+
+        if (!id_client || !id_ticket) {
+            res.status(400).json({
+                ok: false,
+                message: "id_client e id_ticket son requeridos",
+            });
+            return;
+        }
+
+        const serviceOrderModel = getAdminServiceOrder();
+        const result = await serviceOrderModel.getTicketById(
+            Number(id_ticket),
+            Number(id_client)
+        );
+
+        if (!result.ok) {
+            res.status(404).json(result);
+            return;
+        }
+
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error obteniendo ticket",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// Obtener logs de un ticket
+adminRouter.get("/tickets/:id_client/:id_ticket/logs", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client, id_ticket } = req.params;
+
+        if (!id_client || !id_ticket) {
+            res.status(400).json({
+                ok: false,
+                message: "id_client e id_ticket son requeridos",
+            });
+            return;
+        }
+
+        const serviceOrderModel = getAdminServiceOrder();
+        const result = await serviceOrderModel.getTicketLogs(
+            Number(id_ticket),
+            Number(id_client)
+        );
+
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error obteniendo logs del ticket",
+            data: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+
+// ++++++++++++++++++++++++ SERVICIO ++++++++++++++++++++++++
+adminRouter.post("/service", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id_client, id_user }:CreateServicePayload  = req.body;
+
+        if (!id_client || !id_user) {
+            res.status(400).json({
+                ok: false,
+                message: "hay datos faltantes y son requeridos",
+            });
+            return;
+        }
+
+        const serviceModel = getAdminService();
+        const result = await serviceModel.registerService({
+            id_client,
+            id_user
+        });
+
+        res.status(200).json({
+            ok: true,
+            message: "Servicio creado exitosamente",
+            data: result,
+        });
+        
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: "Error obteniendo logs del ticket",
             data: error instanceof Error ? error.message : String(error),
         });
     }

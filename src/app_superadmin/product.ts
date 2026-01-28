@@ -1,6 +1,6 @@
 import db from "../config/database";
 import { Database } from "../core/database";
-// import { Utils } from "../core/utils";
+import { Utils } from "../core/utils";
 
 interface CreateProductData {
   description?: string;
@@ -47,6 +47,13 @@ export class product {
 
             const productId = result.insertId;
 
+            await Utils.registerProductLog(
+                this.db,
+                productId,
+                id_user,
+                `Producto creado: ${name}`
+            );
+
             if (commit) {
                 await this.db.commit();
             }
@@ -56,7 +63,6 @@ export class product {
                 message: "Producto creado exitosamente"
             };
         } catch (error) {
-            console.error("Error en createProduct: ", error);
             if (commit) {
                 await this.db.rollback();
             }
@@ -114,24 +120,28 @@ export class product {
 
     async updateProduct(
         id_product: number,
+        id_user: number,
         data: { name?: string; description?: string }
-        ) {
+    ) {
         try {
             const fields: string[] = [];
             const values: any[] = [];
+            const changes: string[] = [];
 
             if (data.name !== undefined) {
-            fields.push("name = ?");
-            values.push(data.name);
+                fields.push("name = ?");
+                values.push(data.name);
+                changes.push(`nombre: ${data.name}`);
             }
 
             if (data.description !== undefined) {
-            fields.push("description = ?");
-            values.push(data.description);
+                fields.push("description = ?");
+                values.push(data.description);
+                changes.push(`descripción actualizada`);
             }
 
             if (fields.length === 0) {
-            return { success: false, message: "No hay campos para actualizar" };
+                return { success: false, message: "No hay campos para actualizar" };
             }
 
             values.push(id_product);
@@ -139,21 +149,34 @@ export class product {
             const query = `UPDATE products SET ${fields.join(", ")} WHERE id_product = ?`;
             await this.db.execute(query, values);
 
+            await Utils.registerProductLog(
+                this.db,
+                id_product,
+                id_user,
+                `Producto actualizado: ${changes.join(", ")}`
+            );
+
             return { success: true, message: "Producto actualizado exitosamente" };
         } catch (error) {
-            console.error("Error en updateProduct:", error);
             throw error;
         }
     }
 
-    async deleteProduct(id_product: number) {
-    try {
-        const query = `UPDATE products SET i_status = 0 WHERE id_product = ?`;
-        await this.db.execute(query, [id_product]);
-        return { success: true, message: "Producto eliminado exitosamente" };
-    } catch (error) {
-        console.error("Error en deleteProduct:", error);
-        throw error;
-    }
+    async deleteProduct(id_product: number, id_user: number) {
+        try {
+            const query = `UPDATE products SET i_status = 0 WHERE id_product = ?`;
+            await this.db.execute(query, [id_product]);
+
+            await Utils.registerProductLog(
+                this.db,
+                id_product,
+                id_user,
+                "Producto eliminado"
+            );
+
+            return { success: true, message: "Producto eliminado exitosamente" };
+        } catch (error) {
+            throw error;
+        }
     }
 }

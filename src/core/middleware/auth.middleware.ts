@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from "express";
-import { verify_token, TokenPayload } from '../../core/utils';
+import { Utils, TokenPayload } from '../../core/utils';
 
 declare global {
     namespace Express {
         interface Request {
-            user?: TokenPayload; // Añadimos la propiedad user al objeto Request
+            user?: TokenPayload;
         }
     }
 }
@@ -12,11 +12,10 @@ declare global {
 /**
  * Middleware para verificar la autenticación mediante JWT
  */
-export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+export const authMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // Obtener el token del header de autorización
       const authHeader = req.headers.authorization;
-      
+
       if (!authHeader) {
         res.status(401).json({
           ok: false,
@@ -25,8 +24,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
         });
         return;
       }
-  
-      // Verificar formato del header de autorización
+
       if (!authHeader.startsWith('Bearer ')) {
         res.status(401).json({
           ok: false,
@@ -35,33 +33,19 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
         });
         return;
       }
-  
-      // Extraer el token
+
       const token = authHeader.split(' ')[1];
-      
-      // Verificar el token
-      const decoded = verify_token(token);
-      
-      if (!decoded) {
-        res.status(401).json({
-          ok: false,
-          data: null,
-          message: 'Token inválido o expirado'
-        });
-        return;
-      }
-  
-      // Agregar información del usuario al request para uso posterior
+
+      const decoded = await Utils.verify_token(token);
+
       req.user = decoded;
-      
-      // Continuar con la siguiente función
+
       next();
     } catch (error) {
-      console.error('Error en el middleware de autenticación:', error);
-      res.status(500).json({
+      res.status(401).json({
         ok: false,
         data: null,
-        message: 'Error interno del servidor'
+        message: 'Token inválido o expirado'
       });
     }
   };

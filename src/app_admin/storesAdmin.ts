@@ -62,7 +62,6 @@ export class storesAdmin extends Store {
                 message: "Tienda cargada correctamente"
             }
         } catch (error) {
-            console.log("f.getStoreByIdClient: ", error);
             throw error;
         }
     }
@@ -97,16 +96,12 @@ export class storesAdmin extends Store {
             `;
             return await this.db.select(query, [id_client]);
         } catch (error) {
-            console.error("Error en getStoresForClient: ", error);
             throw error;
         }
     }
 
     async updateStoreForClient(data_store_updated: CreateStorepayload) {
         try {
-
-            console.log("data_store_updated.id_store_client: ", data_store_updated.id_store_client)
-
             // 1. Obtener datos actuales con un solo query
             const query_current = `
                 SELECT 
@@ -171,28 +166,23 @@ export class storesAdmin extends Store {
             values.push(id_store);
             const query_update = `UPDATE stores SET ${fieldsToUpdate.join(", ")} WHERE id_store = ?`;
 
-            console.log("query: ", query_update);
-            console.log("values update: ", values);
-            
             await this.db.execute(query_update, values);
 
-            // 5. Registrar log (opcional)
+            // 5. Registrar log
             await Utils.registerStoreLog(this.db, id_store, data_store_updated.id_user_creator, "Tienda actualizada");
 
             return { success: true, message: "Establecimiento actualizado exitosamente" };
 
         } catch (error) {
-            console.error("f.updateStoreForClient: ", error);
             throw error;
         }
     }
 
-    async deleteStoreForClient(id_store_client: number) {
-        try{
-
+    async deleteStoreForClient(id_store_client: number, id_user: number) {
+        try {
             const store = await this.getStoreByIdClient(id_store_client);
 
-            if(!store.ok){
+            if (!store.ok) {
                 return {
                     ok: false,
                     data: null,
@@ -202,7 +192,7 @@ export class storesAdmin extends Store {
 
             const remove_store = await this.removeStoreFromClient(store?.data?.id_store, store?.data?.id_client);
 
-            if(!remove_store.ok){
+            if (!remove_store.ok) {
                 return {
                     ok: false,
                     data: null,
@@ -210,13 +200,20 @@ export class storesAdmin extends Store {
                 }
             }
 
+            await Utils.registerStoreLog(
+                this.db,
+                store?.data?.id_store,
+                id_user,
+                `Tienda desvinculada del cliente ${store?.data?.id_client}`
+            );
+
             return {
                 ok: true,
                 data: null,
                 message: "Tienda eliminada correctamente."
             }
-        } catch(error){
-            console.log("f.deleteStoreForClient: ", error);
+        } catch (error) {
+            throw error;
         }
     }
 
@@ -262,21 +259,16 @@ export class storesAdmin extends Store {
                         store.country
                     ].filter(Boolean).join(", ");
 
-                    console.log(`Geocoding fila ${i + 2}: ${fullAddress}`);
-
                     const geoResult = await Utils.geocodeAddress(fullAddress);
-                    
+
                     if (geoResult.latitude && geoResult.longitude) {
                         store.latitude = geoResult.latitude;
                         store.longitude = geoResult.longitude;
                         geocoded++;
-                    } else {
-                        // Opcional: puedes decidir si insertar sin coordenadas o marcarlo como error
-                        console.log(`No se encontraron coordenadas para fila ${i + 2}`);
                     }
 
                     // Pequeña pausa para no saturar la API (Google tiene límites)
-                    await Utils.sleep(100); // 100ms entre cada geocoding
+                    await Utils.sleep(100);
                 }
 
                 // Insertar store
@@ -317,7 +309,6 @@ export class storesAdmin extends Store {
                 inserted++;
 
             } catch (error) {
-                console.error(`Error en fila ${i + 2}:`, error);
                 errors.push({ row: i + 2, error: error instanceof Error ? error.message : String(error) });
             }
         }

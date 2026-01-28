@@ -1,10 +1,4 @@
 import express, { Router, Request, Response } from "express";
-// import { authMiddleware } from '../core/middleware/auth.middleware'
-// import { actualizar_negocio, crear_negocio, eliminar_negocio, obtener_lista_negocios, obtener_negocio } from './negocios.superadmin.controller';
-// import { actualizar_usuario, eliminar_usuario, login_usuario, obtener_lista_usuarios, obtener_usuario, registrar_usuario } from './usuarios.superadmin.controller';
-// import { conectarEstablecimientoNegocio, createEstablecimiento, deleteEstablecimiento, desconectarEstablecimientoNegocio, getAllEstablecimientos, getEstablecimiento, updateEstablecimiento } from './establecimientos.superadmin.controller';
-// import { crear_pregunta, obtener_pregunta_por_id, obtener_todas_preguntas, actualizar_pregunta, eliminar_pregunta, obtener_preguntas_por_tipo, obtener_preguntas_por_evidencia } from './preguntas.superadmin.controller';
-// import { crear_pregunta_negocio, actualizar_pregunta_negocio, eliminar_pregunta_negocio, obtener_preguntas_negocio } from './preguntas_negocio.superadmin.controllers';
 
 import { User } from "./user";
 import { Client } from "./client";
@@ -155,8 +149,19 @@ superAdminRouter.post(
   async (req: Request, res: Response): Promise<void> => {
     let questionModel: Question | null = null;
     try {
-      const { id_user, question, base_price, i_status, promoter_earns } =
-        req.body;
+      const {
+        id_user,
+        question,
+        question_type,
+        base_price,
+        promoter_earns,
+        i_status,
+        is_multiple,
+        min_value,
+        max_value,
+        max_photos,
+        options
+      } = req.body;
 
       if (
         !id_user ||
@@ -172,17 +177,19 @@ superAdminRouter.post(
       }
 
       questionModel = getQuestionModel();
-      const newQuestion = {
-        id_question: 0,
-        id_user: id_user,
-        question: question,
-        base_price: base_price,
-        promoter_earns: promoter_earns,
-        i_status: i_status,
-        dt_register: "",
-        dt_updated: "",
-      };
-      const result = await questionModel.createQuestion(id_user, newQuestion);
+      const result = await questionModel.createQuestion(id_user, {
+        id_user,
+        question,
+        question_type: question_type || 'open',
+        base_price,
+        promoter_earns,
+        i_status,
+        is_multiple,
+        min_value,
+        max_value,
+        max_photos,
+        options
+      });
       res.status(201).json({
         message: "Super admin creo pregunta correctamente",
         data: result,
@@ -489,6 +496,401 @@ superAdminRouter.get("/stores/clients/available-stores/:id_client", async (req: 
     console.error(error);
     res.status(500).json({
       error: "Error obteniendo tiendas disponibles",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+// ==================== QUESTIONS CRUD ====================
+
+// Obtener todas las preguntas
+superAdminRouter.get("/questions", async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const questionModel = getQuestionModel();
+    const questions = await questionModel.getQuestions();
+
+    res.status(200).json({
+      ok: true,
+      message: "Preguntas obtenidas exitosamente",
+      data: questions,
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: "Error obteniendo preguntas",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+// Obtener pregunta por ID
+superAdminRouter.get("/questions/:id_question", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_question } = req.params;
+
+    const questionModel = getQuestionModel();
+    const question = await questionModel.getQuestionById(Number(id_question));
+
+    if (!question) {
+      res.status(404).json({
+        ok: false,
+        message: "Pregunta no encontrada",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      ok: true,
+      message: "Pregunta obtenida exitosamente",
+      data: question,
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: "Error obteniendo pregunta",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+// Crear pregunta
+superAdminRouter.post("/questions", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const {
+      id_user,
+      question,
+      question_type,
+      base_price,
+      promoter_earns,
+      i_status,
+      is_multiple,
+      min_value,
+      max_value,
+      max_photos,
+      options
+    } = req.body;
+
+    if (!id_user || !question || base_price === undefined || promoter_earns === undefined) {
+      res.status(400).json({
+        ok: false,
+        error: "id_user, question, base_price y promoter_earns son requeridos",
+      });
+      return;
+    }
+
+    const questionModel = getQuestionModel();
+    const result = await questionModel.createQuestion(id_user, {
+      id_user,
+      question,
+      question_type: question_type || 'open',
+      base_price,
+      promoter_earns,
+      i_status: i_status ?? true,
+      is_multiple,
+      min_value,
+      max_value,
+      max_photos,
+      options
+    });
+
+    res.status(201).json({
+      ok: true,
+      message: result.message,
+      data: { id: result.id },
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: "Error creando pregunta",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+// Actualizar pregunta
+superAdminRouter.put("/questions/:id_question", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_question } = req.params;
+    const {
+      id_user,
+      question,
+      question_type,
+      base_price,
+      promoter_earns,
+      i_status,
+      is_multiple,
+      min_value,
+      max_value,
+      max_photos,
+      options
+    } = req.body;
+
+    if (!id_user) {
+      res.status(400).json({
+        ok: false,
+        error: "id_user es requerido",
+      });
+      return;
+    }
+
+    const questionModel = getQuestionModel();
+    const result = await questionModel.updateQuestion(Number(id_question), id_user, {
+      question,
+      question_type,
+      base_price,
+      promoter_earns,
+      i_status,
+      is_multiple,
+      min_value,
+      max_value,
+      max_photos,
+      options
+    });
+
+    res.status(200).json({
+      ok: true,
+      message: result.message,
+      success: result.success,
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: "Error actualizando pregunta",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+// Eliminar pregunta (soft delete)
+superAdminRouter.delete("/questions/:id_question", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_question } = req.params;
+    const { id_user } = req.body;
+
+    if (!id_user) {
+      res.status(400).json({
+        ok: false,
+        error: "id_user es requerido",
+      });
+      return;
+    }
+
+    const questionModel = getQuestionModel();
+    const result = await questionModel.deleteQuestion(Number(id_question), id_user);
+
+    res.status(200).json({
+      ok: true,
+      message: result.message,
+      success: result.success,
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: "Error eliminando pregunta",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+// ==================== QUESTIONS - ASIGNACIÓN A CLIENTES ====================
+
+// Asignar pregunta a cliente
+superAdminRouter.post("/questions/:id_question/clients/:id_client", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_question, id_client } = req.params;
+    const { id_user, client_price, client_promoter_earns } = req.body;
+
+    if (!id_user) {
+      res.status(400).json({
+        ok: false,
+        error: "id_user es requerido",
+      });
+      return;
+    }
+
+    const questionModel = getQuestionModel();
+    const result = await questionModel.assignQuestionToClient(
+      Number(id_question),
+      Number(id_client),
+      id_user,
+      client_price || 0,
+      client_promoter_earns || 0
+    );
+
+    res.status(201).json({
+      ok: true,
+      message: result.message,
+      data: { id: result.id },
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: "Error asignando pregunta al cliente",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+// Desasignar pregunta de cliente
+superAdminRouter.delete("/questions/:id_question/clients/:id_client", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_question, id_client } = req.params;
+    const { id_user } = req.body;
+
+    if (!id_user) {
+      res.status(400).json({
+        ok: false,
+        error: "id_user es requerido",
+      });
+      return;
+    }
+
+    const questionModel = getQuestionModel();
+    const result = await questionModel.unassignQuestionFromClient(
+      Number(id_question),
+      Number(id_client),
+      id_user
+    );
+
+    res.status(200).json({
+      ok: result.ok,
+      message: result.message,
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: "Error desasignando pregunta del cliente",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+// Actualizar precios de pregunta-cliente
+superAdminRouter.put("/questions-client/:id_question_client", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_question_client } = req.params;
+    const { id_user, client_price, client_promoter_earns } = req.body;
+
+    if (!id_user) {
+      res.status(400).json({
+        ok: false,
+        error: "id_user es requerido",
+      });
+      return;
+    }
+
+    const questionModel = getQuestionModel();
+    const result = await questionModel.updateQuestionClientPricing(
+      Number(id_question_client),
+      id_user,
+      { client_price, client_promoter_earns }
+    );
+
+    res.status(200).json({
+      ok: true,
+      message: result.message,
+      success: result.success,
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: "Error actualizando precios",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+// Obtener preguntas asignadas a un cliente
+superAdminRouter.get("/questions/clients/:id_client", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_client } = req.params;
+
+    const questionModel = getQuestionModel();
+    const questions = await questionModel.getQuestionsByClient(Number(id_client));
+
+    res.status(200).json({
+      ok: true,
+      message: "Preguntas del cliente obtenidas exitosamente",
+      data: questions,
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: "Error obteniendo preguntas del cliente",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+// Obtener clientes asignados a una pregunta
+superAdminRouter.get("/questions/:id_question/clients", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_question } = req.params;
+
+    const questionModel = getQuestionModel();
+    const clients = await questionModel.getClientsByQuestion(Number(id_question));
+
+    res.status(200).json({
+      ok: true,
+      message: "Clientes de la pregunta obtenidos exitosamente",
+      data: clients,
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: "Error obteniendo clientes de la pregunta",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+// Obtener preguntas disponibles para asignar a un cliente
+superAdminRouter.get("/questions/clients/available/:id_client", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_client } = req.params;
+
+    const questionModel = getQuestionModel();
+    const questions = await questionModel.getAvailableQuestionsForClient(Number(id_client));
+
+    res.status(200).json({
+      ok: true,
+      message: "Preguntas disponibles obtenidas exitosamente",
+      data: questions,
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: "Error obteniendo preguntas disponibles",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+// Obtener detalle de asignación pregunta-cliente
+superAdminRouter.get("/questions-client/:id_question_client", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_question_client } = req.params;
+
+    const questionModel = getQuestionModel();
+    const data = await questionModel.getQuestionClientById(Number(id_question_client));
+
+    if (!data) {
+      res.status(404).json({
+        ok: false,
+        message: "Asignación no encontrada",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      ok: true,
+      message: "Asignación obtenida exitosamente",
+      data,
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: "Error obteniendo asignación",
       details: error instanceof Error ? error.message : String(error),
     });
   }

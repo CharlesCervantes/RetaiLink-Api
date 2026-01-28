@@ -1,30 +1,20 @@
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
-import nodemailer from "nodemailer";
 import * as jwt from "jsonwebtoken";
+import { RowDataPacket } from "mysql2/promise";
 import { EmailService } from "./services/email/EmailService";
 
 import { Database } from "./database";
-
-// import { bucket } from "../config/cloud_store";
+import db from "../config/database";
 
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET || "tu_clave_secreta_super_segura";
+
 export interface TokenPayload {
   id: number;
   email: string;
 }
-
-// Función para verificar token JWT
-export const verify_token = (token: string): TokenPayload | null => {
-  try {
-    return jwt.verify(token, JWT_SECRET) as TokenPayload;
-  } catch (error) {
-    console.error("Error al verificar token:", error);
-    return null;
-  }
-};
 
 export function generarCodigoAfiliacion(): string {
   const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -36,17 +26,22 @@ export function generarCodigoAfiliacion(): string {
 }
 
 interface GeocodingResult {
-    latitude: number | null;
-    longitude: number | null;
-    formatted_address?: string;
+  latitude: number | null;
+  longitude: number | null;
+  formatted_address?: string;
+}
+
+interface ClientRow extends RowDataPacket {
+  vc_initialism: string;
+}
+
+interface FolioRow extends RowDataPacket {
+  id_folio: number;
+  i_folio?: number;
 }
 
 export class Utils {
-  emailService: EmailService;
-
-  constructor() {
-    this.emailService = new EmailService();
-  }
+  static db: Database = db;
 
   static async registerUserLog(
     db: Database,
@@ -90,9 +85,7 @@ export class Utils {
       const query =
         "INSERT INTO client_logs (id_client, id_user, `log`, i_status) VALUES (?, ?, ?, 1)";
       const params = [clientId, userId, log];
-      const resp = await db.execute(query, params);
-
-      console.log("resp: ", resp);
+      await db.execute(query, params);
 
       if (commit) {
         await db.commit();
@@ -186,6 +179,33 @@ export class Utils {
     }
   }
 
+  static async registerProductLog(
+    db: Database,
+    productId: number,
+    userId: number,
+    log: string,
+  ): Promise<void> {
+    let commit = false;
+    try {
+      if (!db.inTransaction) {
+        await db.beginTransaction();
+        commit = true;
+      }
+      await db.query(
+        "INSERT INTO product_logs (id_product, id_user, `log`, i_status) VALUES (?, ?, ?, 1)",
+        [productId, userId, log],
+      );
+      if (commit) {
+        await db.commit();
+      }
+    } catch (error) {
+      if (commit) {
+        await db.rollback();
+      }
+      throw error;
+    }
+  }
+
   static async hash_password(password_unsecured: string): Promise<string> {
     try {
       const saltRounds = 10;
@@ -229,17 +249,6 @@ export class Utils {
         }
       });
     });
-  }
-
-  static generate_email_transporter(): nodemailer.Transporter {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER ?? "edgaralanra@gmail.com",
-        pass: process.env.EMAIL_PASSWORD ?? "ymjksgddecxvggwj",
-      },
-    });
-    return transporter;
   }
 
   /**
@@ -310,4 +319,94 @@ export class Utils {
   static sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
+
+
+  /**
+ * Obtiene el siguiente folio disponible SIN crear registro
+ * Solo consulta cuál sería el siguiente número
+ */
+static async getCurrentFolio(id_client: number, i_type: number = 1): Promise<string> {
+  try {
+    const getClient = "SELECT vc_initialism FROM clients WHERE id_client = ? LIMIT 1";
+    const clientRows = await this.db.select<ClientRow[]>(getClient, [id_client]);
+    
+    if (!clientRows || clientRows.length === 0) {
+      throw new Error(`Client ${id_client} not found`);
+    }
+
+    const initialism = clientRows[0].vc_initialism;
+
+    // Obtener el ÚLTIMO folio registrado para este cliente/tipo
+    const getLastFolio = `
+      SELECT i_folio 
+      FROM folios 
+      WHERE id_client = ? AND i_type = ? 
+      ORDER BY i_folio DESC 
+      LIMIT 1
+    `;
+    const lastFolioRows = await this.db.select<FolioRow[]>(getLastFolio, [id_client, i_type]);
+
+    let nextFolio: number;
+
+    if (!lastFolioRows || lastFolioRows.length === 0) {
+      // Si no existe ningún folio, el siguiente será 1
+      nextFolio = 1;
+    } else {
+      // El siguiente es el último + 1
+      nextFolio = lastFolioRows[0].i_folio! + 1;
+    }
+
+    const formattedFolio = `${initialism}${String(nextFolio).padStart(5, '0')}`;
+    return formattedFolio;
+
+  } catch (error) {
+    console.error("Error getting current folio:", error);
+    throw error;
+  }
+}
+
+/**
+ * Registra/inserta un nuevo folio usado en la base de datos
+ * Cada ticket tendrá su propio registro en la tabla folios
+ */
+static async updateFolioCounter(id_client: number, i_type: number = 1): Promise<number> {
+  try {
+    // Obtener el último folio registrado
+    const getLastFolio = `
+      SELECT i_folio 
+      FROM folios 
+      WHERE id_client = ? AND i_type = ? 
+      ORDER BY i_folio DESC 
+      LIMIT 1
+    `;
+    const lastFolioRows = await this.db.select<FolioRow[]>(getLastFolio, [id_client, i_type]);
+
+    let newFolioNumber: number;
+
+    if (!lastFolioRows || lastFolioRows.length === 0) {
+      newFolioNumber = 1;
+    } else {
+      newFolioNumber = lastFolioRows[0].i_folio! + 1;
+    }
+
+    // INSERTAR un NUEVO registro para este folio
+    const insertFolio = `
+      INSERT INTO folios (id_client, i_type, i_folio, i_before_folio, i_next_folio) 
+      VALUES (?, ?, ?, ?, ?)
+    `;
+    await this.db.execute(insertFolio, [
+      id_client, 
+      i_type, 
+      newFolioNumber,
+      newFolioNumber - 1,
+      newFolioNumber + 1
+    ]);
+
+    return newFolioNumber;
+
+  } catch (error) {
+    console.error("Error inserting folio record:", error);
+    throw error;
+  }
+}
 }

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Bash(dir:*)",
+      "Bash(del \"c:\\\\Users\\\\Edgar\\\\Documents\\\\software_dev\\\\RetaiLink-Api\\\\src\\\\core\\\\interfaces\\\\negocio.ts\")",
+      "Bash(del \"c:\\\\Users\\\\Edgar\\\\Documents\\\\software_dev\\\\RetaiLink-Api\\\\src\\\\core\\\\interfaces\\\\establecimiento.ts\")",
+      "Bash(del \"c:\\\\Users\\\\Edgar\\\\Documents\\\\software_dev\\\\RetaiLink-Api\\\\src\\\\core\\\\interfaces\\\\usuarios.ts\")",
+      "Bash(npx tsc:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
