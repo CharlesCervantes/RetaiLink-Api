@@ -1,0 +1,494 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model addresses {
+  id                 Int      @id @default(autoincrement()) @db.UnsignedInt
+  entity_type        String   @db.VarChar(50)
+  entity_id          Int      @db.UnsignedInt
+  id_country         Int      @db.UnsignedInt
+  id_state           Int      @db.UnsignedInt
+  id_city            Int      @db.UnsignedInt
+  street             String   @db.VarChar(150)
+  ext_number         String   @db.VarChar(20)
+  int_number         String?  @db.VarChar(20)
+  neighborhood       String?  @db.VarChar(100)
+  postal_code        String   @db.VarChar(20)
+  address_references String?  @db.Text
+  latitude           Decimal? @db.Decimal(10, 8)
+  longitude          Decimal? @db.Decimal(11, 8)
+  is_active          Boolean  @default(true)
+  created_at         DateTime @default(now()) @db.Timestamp(0)
+  updated_at         DateTime @default(now()) @db.Timestamp(0)
+
+  country            countries @relation(fields: [id_country], references: [id])
+  state              states    @relation(fields: [id_state], references: [id])
+  city               cities    @relation(fields: [id_city], references: [id])
+}
+
+model cities {
+  id         Int      @id @default(autoincrement()) @db.UnsignedInt
+  id_country Int      @db.UnsignedInt
+  id_state   Int      @db.UnsignedInt
+  name       String   @db.VarChar(100)
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  updated_at DateTime @default(now()) @db.Timestamp(0)
+
+  country    countries   @relation(fields: [id_country], references: [id])
+  state      states      @relation(fields: [id_state], references: [id])
+  addresses  addresses[]
+}
+
+
+model client_logs {
+  id_cliente_log Int      @id @default(autoincrement()) @db.UnsignedInt
+  id_client      Int      @db.UnsignedInt
+  id_user        Int      @db.UnsignedInt
+  log            String   @db.VarChar(1000)
+  i_status       Int      @default(1) @db.TinyInt
+  dt_register    DateTime @default(now()) @db.Timestamp(0)
+  dt_updated     DateTime @default(now()) @db.Timestamp(0)
+  clients        clients  @relation(fields: [id_client], references: [id_client], map: "fk_logs_client")
+  users          users    @relation(fields: [id_user], references: [id_user], map: "fk_logs_client_user")
+
+  @@index([id_client], map: "fk_logs_client")
+  @@index([id_user], map: "idx_client_logs_user")
+}
+
+
+model clients {
+  id_client               Int                @id @default(autoincrement()) @db.UnsignedInt
+  id_user                 Int                @db.UnsignedInt
+  name                    String?            @db.VarChar(100)
+  vc_initialism           String             @db.VarChar(20)
+  i_status                Int                @default(1) @db.TinyInt
+  dt_register             DateTime           @default(now()) @db.Timestamp(0)
+  dt_updated              DateTime           @default(now()) @db.Timestamp(0)
+  rfc                     String             @default("") @db.VarChar(15)
+  email                   String             @default("") @db.VarChar(255)
+  address                 String             @default("") @db.VarChar(255)
+  city                    String             @default("") @db.VarChar(255)
+  adiccional_notes        String?            @db.Text
+  phone                   String             @default("") @db.VarChar(20)
+  vc_url_situacion_fiscal String?            @db.VarChar(500)
+  client_logs             client_logs[]
+  users                   users              @relation(fields: [id_user], references: [id_user], map: "fk_clients_user")
+  questions_client        questions_client[]
+  orders                  orders[]
+
+  @@index([i_status], map: "idx_clients_status")
+  @@index([id_user], map: "idx_clients_user")
+}
+
+model countries {
+  id         Int      @id @default(autoincrement()) @db.UnsignedInt
+  name       String   @db.VarChar(100)
+  phone_code String   @db.VarChar(10)
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  updated_at DateTime @default(now()) @db.Timestamp(0)
+
+  states     states[]
+  cities     cities[]
+  addresses  addresses[]
+}
+
+
+model order_logs {
+  id_order_log Int      @id @default(autoincrement()) @db.UnsignedInt
+  id_order     Int      @default(0) @db.UnsignedInt
+  id_usuario   Int      @default(0) @db.UnsignedInt
+  id_promotor  Int      @default(0) @db.UnsignedInt
+  id_negocio   Int      @default(0) @db.UnsignedInt
+  id_pais      Int      @default(0) @db.UnsignedInt
+  vc_log       String   @db.VarChar(500)
+  i_status     Int      @default(1) @db.TinyInt
+  dt_registro  DateTime @default(now()) @db.Timestamp(0)
+
+  order        orders   @relation(fields: [id_order], references: [id_order])
+
+  @@index([id_negocio], map: "idx_negocio")
+  @@index([id_order], map: "idx_order")
+  @@index([id_usuario], map: "idx_usuario")
+}
+
+model orders {
+  id_order    Int            @id @default(autoincrement()) @db.UnsignedInt
+  id_user     Int            @db.UnsignedInt
+  id_client   Int            @db.UnsignedInt
+  f_total     Decimal        @db.Decimal(10, 2)
+  dt_register DateTime       @db.DateTime(0)
+  dt_update   DateTime       @db.DateTime(0)
+  id_status   Int            @default(1)
+
+  user         users           @relation(fields: [id_user], references: [id_user])
+  client       clients         @relation(fields: [id_client], references: [id_client])
+  order_logs   order_logs[]
+  order_requests order_requests[]
+}
+
+model order_requests {
+  id             Int      @id @default(autoincrement()) @db.UnsignedInt
+  id_order       Int      @db.UnsignedInt
+  id_request     Int      @db.UnsignedInt
+  id_status      Int?     // Estado propio de esta relación (opcional)
+  dt_register    DateTime @default(now()) @db.Timestamp(0)
+  dt_update      DateTime @updatedAt @db.Timestamp(0)
+
+  order   orders   @relation(fields: [id_order], references: [id_order])
+  request requests @relation(fields: [id_request], references: [id_request])
+
+  @@unique([id_order, id_request])   // Evita duplicados de la misma solicitud en una orden
+  @@index([id_order])
+  @@index([id_request])
+}
+
+model product_logs {
+  id_product_log Int       @id @default(autoincrement())
+  id_product     Int
+  id_usuario     Int       @default(0) @db.UnsignedInt
+  id_promotor    Int       @default(0) @db.UnsignedInt
+  id_negocio     Int       @default(0) @db.UnsignedInt
+  id_pais        Int       @default(0) @db.UnsignedInt
+  vc_log         String    @default("") @db.VarChar(500)
+  i_status       Boolean?  @default(true)
+  dt_register    DateTime? @default(now()) @db.DateTime(0)
+  dt_updated     DateTime? @updatedAt      @db.Timestamp(0)
+}
+
+model products {
+  id_product  Int       @id @default(autoincrement())
+  id_user     Int       @db.UnsignedInt
+  id_client   Int       @db.UnsignedInt
+  name        String    @db.VarChar(255)
+  description String?   @db.Text
+  vc_image    String?   @db.VarChar(500)
+  i_status    Int?      @default(1) @db.TinyInt
+  dt_created  DateTime? @default(now()) @db.Timestamp(0)
+  dt_updated  DateTime? @updatedAt      @db.Timestamp(0)
+
+  request_products request_products[]
+}
+
+model promoter_logs {
+  id_promoter_log Int      @id @default(autoincrement()) @db.UnsignedInt
+  id_promotor     Int      @default(0) @db.UnsignedInt
+  id_usuario      Int      @default(0) @db.UnsignedInt
+  id_negocio      Int      @default(0) @db.UnsignedInt
+  id_pais         Int      @default(0) @db.UnsignedInt
+  vc_log          String   @db.VarChar(500)
+  i_status        Int      @default(1) @db.TinyInt
+  dt_registro     DateTime @default(now()) @db.Timestamp(0)
+
+  @@index([id_negocio], map: "idx_negocio")
+  @@index([id_promotor], map: "idx_promotor")
+  @@index([id_usuario], map: "idx_usuario")
+}
+
+model promoters {
+  id            Int       @id @default(autoincrement()) @db.UnsignedInt
+  name          String    @db.VarChar(255)
+  lastname      String?   @db.VarChar(255)
+  email         String?   @unique(map: "vc_email") @db.VarChar(255)
+  password      String    @db.VarChar(255)
+  phone         String    @unique(map: "vc_phone") @db.VarChar(20)
+  fcm_token     String?   @db.VarChar(255)
+  dt_register   DateTime  @db.DateTime(0)
+  dt_updated    DateTime  @default(now()) @db.Timestamp(0)
+  dt_last_login DateTime? @db.DateTime(0)
+  isActive      Boolean   @default(true)
+  latitude      Decimal?  @db.Decimal(10, 8)
+  longitude     Decimal?  @db.Decimal(11, 8)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model question_client_logs {
+  id_question_client_log Int              @id @default(autoincrement()) @db.UnsignedInt
+  id_question_client     Int              @db.UnsignedInt
+  id_user                Int              @db.UnsignedInt
+  log                    String           @db.VarChar(1000)
+  i_status               Int              @default(1) @db.TinyInt
+  dt_register            DateTime         @default(now()) @db.Timestamp(0)
+  dt_updated             DateTime         @updatedAt      @db.Timestamp(0)
+  questions_client       questions_client @relation(fields: [id_question_client], references: [id_question_client], map: "fk_question_client_logs_question_client")
+  users                  users            @relation(fields: [id_user], references: [id_user], map: "fk_question_client_logs_user")
+
+  @@index([id_question_client], map: "fk_question_client_logs_question_client")
+  @@index([id_user], map: "fk_question_client_logs_user")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model question_logs {
+  id_question_log Int       @id @default(autoincrement()) @db.UnsignedInt
+  id_question     Int       @db.UnsignedInt
+  id_user         Int       @db.UnsignedInt
+  log             String    @db.VarChar(1000)
+  i_status        Int       @default(1) @db.TinyInt
+  dt_register     DateTime  @default(now()) @db.Timestamp(0)
+  dt_updated      DateTime  @default(now()) @db.Timestamp(0)
+  questions       questions @relation(fields: [id_question], references: [id_question], map: "fk_logs_question")
+  users           users     @relation(fields: [id_user], references: [id_user], map: "fk_logs_question_user")
+
+  @@index([id_question], map: "fk_logs_question")
+  @@index([id_user], map: "fk_logs_question_user")
+}
+
+model question_options {
+  id_option            Int       @id @default(autoincrement()) @db.UnsignedInt
+  id_question          Int       @db.UnsignedInt
+  option_text          String    @db.VarChar(255)
+  option_value_numeric Decimal?  @db.Decimal(10, 2)
+  option_value_text    String?   @db.VarChar(100)
+  option_order         Int?      @default(0)
+  i_status             Boolean?  @default(true)
+  dt_register          DateTime? @default(now()) @db.DateTime(0)
+  dt_updated           DateTime? @updatedAt @db.DateTime(0)
+
+  questions            questions @relation("QuestionOptions", fields: [id_question], references: [id_question], map: "fk_option_question")
+
+  @@index([id_question], map: "fk_option_question")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model questions {
+  id_question      Int                @id @default(autoincrement()) @db.UnsignedInt
+  id_user          Int                @db.UnsignedInt
+  question         String             @db.VarChar(1000)
+  i_status         Int                @default(1) @db.TinyInt
+  dt_register      DateTime           @default(now()) @db.Timestamp(0)
+  dt_updated       DateTime           @updatedAt      @db.Timestamp(0)
+  question_type    String?            @default("open") @db.VarChar(20)
+  min_value        Decimal?           @db.Decimal(10, 2)
+  max_value        Decimal?           @db.Decimal(10, 2)
+  max_photos       Int?               @default(1)
+  question_logs    question_logs[]
+  users            users              @relation(fields: [id_user], references: [id_user], map: "fk_question_user")
+  questions_client questions_client[]
+  question_options question_options[] @relation("QuestionOptions")
+  request_product_questions request_product_questions[]
+
+  @@index([id_user], map: "fk_question_user")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model questions_client {
+  id_question_client    Int                    @id @default(autoincrement()) @db.UnsignedInt
+  id_question           Int                    @db.UnsignedInt
+  id_client             Int                    @db.UnsignedInt
+  id_user               Int                    @db.UnsignedInt
+  i_status              Int                    @default(1) @db.TinyInt
+  dt_register           DateTime               @default(now()) @db.Timestamp(0)
+  dt_updated            DateTime               @updatedAt      @db.Timestamp(0)
+  question_client_logs  question_client_logs[]
+  clients               clients                @relation(fields: [id_client], references: [id_client], map: "fk_question_client_client")
+  questions             questions              @relation(fields: [id_question], references: [id_question], map: "fk_question_client_question")
+  users                 users                  @relation(fields: [id_user], references: [id_user], map: "fk_question_client_user")
+
+  @@index([id_client], map: "fk_question_client_client")
+  @@index([id_question], map: "fk_question_client_question")
+  @@index([id_user], map: "fk_question_client_user")
+}
+
+model request_logs {
+  id_request_log Int      @id @default(autoincrement()) @db.UnsignedInt
+  id_request     Int      @default(0) @db.UnsignedInt
+  id_usuario     Int      @default(0) @db.UnsignedInt
+  id_promotor    Int      @default(0) @db.UnsignedInt
+  id_negocio     Int      @default(0) @db.UnsignedInt
+  id_pais        Int      @default(0) @db.UnsignedInt
+  vc_log         String   @db.VarChar(500)
+  i_status       Int      @default(1) @db.TinyInt
+  dt_registro    DateTime @default(now()) @db.Timestamp(0)
+
+  @@index([id_negocio], map: "idx_negocio")
+  @@index([id_request], map: "idx_request")
+  @@index([id_usuario], map: "idx_usuario")
+}
+
+model request_product_questions {
+  id_request_product_question Int      @id @default(autoincrement()) @db.UnsignedInt
+  id_request_product          Int      @db.UnsignedInt
+  id_question                 Int      @db.UnsignedInt
+  dt_register                 DateTime @default(now()) @db.Timestamp(0)
+  dt_update                   DateTime @default(now()) @db.Timestamp(0)
+  b_active                    Boolean  @default(true)
+
+  request_product request_products @relation(fields: [id_request_product], references: [id_request_product])
+  question        questions        @relation(fields: [id_question], references: [id_question])
+
+  @@index([id_request_product], map: "idx_request_product_question_rp")
+  @@index([id_question], map: "idx_request_product_question_question")
+}
+
+model request_products {
+  id_request_product Int      @id @default(autoincrement()) @db.UnsignedInt
+  id_request         Int      @db.UnsignedInt
+  id_product         Int
+  dt_register        DateTime @default(now()) @db.Timestamp(0)
+  dt_update          DateTime @default(now()) @db.Timestamp(0)
+  b_active           Boolean  @default(true)
+
+  request requests @relation(fields: [id_request], references: [id_request])
+  product products @relation(fields: [id_product], references: [id_product])
+  request_product_questions request_product_questions[]
+
+  @@unique([id_request, id_product], map: "uq_request_product")
+  @@index([id_request], map: "idx_request_products_request")
+  @@index([id_product], map: "idx_request_products_product")
+}
+
+model requests {
+  id_request  Int      @id @default(autoincrement()) @db.UnsignedInt
+  id_user     Int      @db.UnsignedInt
+  id_client   Int      @db.UnsignedInt
+  vc_name     String   @db.VarChar(255)
+  f_value     Decimal  @db.Decimal(10, 2)
+  url_rack_image String?  @db.VarChar(500)
+  id_status   Int      @default(1)
+  b_active    Boolean  @default(true)
+  dt_register DateTime @default(now()) @db.Timestamp(0)
+  dt_update   DateTime @default(now()) @db.Timestamp(0)
+
+  request_products request_products[]
+  order_requests   order_requests[]
+}
+
+
+model states {
+  id         Int      @id @default(autoincrement()) @db.UnsignedInt
+  id_country Int      @db.UnsignedInt
+  name       String   @db.VarChar(100)
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  updated_at DateTime @default(now()) @db.Timestamp(0)
+
+  country    countries   @relation(fields: [id_country], references: [id])
+  cities     cities[]
+  addresses  addresses[]
+}
+
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model store_logs {
+  id_store_log Int      @id @default(autoincrement()) @db.UnsignedInt
+  id_store     Int      @db.UnsignedInt
+  id_user      Int      @db.UnsignedInt
+  log          String   @db.VarChar(1000)
+  i_status     Int      @default(1) @db.TinyInt
+  dt_register  DateTime @default(now()) @db.Timestamp(0)
+  dt_updated   DateTime @default(now()) @db.Timestamp(0)
+  stores       stores   @relation(fields: [id_store], references: [id_store], map: "fk_logs_store")
+  users        users    @relation(fields: [id_user], references: [id_user], map: "fk_logs_store_user")
+
+  @@index([id_store], map: "fk_logs_store")
+  @@index([id_user], map: "fk_logs_store_user")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model stores {
+  id_store     Int          @id @default(autoincrement()) @db.UnsignedInt
+  id_user      Int          @db.UnsignedInt
+  id_channel_sale Int?      @db.UnsignedInt
+  name         String       @db.VarChar(100)
+  store_code   String?      @db.VarChar(50)
+  i_status     Int          @default(1) @db.TinyInt
+  dt_register  DateTime     @default(now()) @db.Timestamp(0)
+  dt_updated   DateTime     @default(now()) @db.Timestamp(0)
+
+  store_logs   store_logs[]
+  sales_channel sales_channels? @relation(fields: [id_channel_sale], references: [id], map: "fk_store_channel")
+  users        users        @relation(fields: [id_user], references: [id_user], map: "fk_store_user")
+
+  @@index([id_user], map: "fk_store_user")
+  @@index([id_channel_sale], map: "fk_store_channel")
+}
+
+
+model task_answers {
+  id_task_answer              Int      @id @default(autoincrement()) @db.UnsignedInt
+  id_task                     Int
+  id_promoter                 Int
+  id_request_product_question Int
+  vc_answer                   String?  @db.Text
+  vc_image_url                String?  @db.VarChar(255)
+  dt_register                 DateTime @db.DateTime(0)
+}
+
+model task_rejections {
+  id_rejection Int       @id @default(autoincrement())
+  id_task      Int
+  id_promoter  Int
+  dt_register  DateTime? @default(now()) @db.DateTime(0)
+
+  @@unique([id_task, id_promoter], map: "uq_task_promoter")
+}
+
+model tasks {
+  id_task              Int      @id @default(autoincrement()) @db.UnsignedInt
+  id_order             Int
+  id_store             Int
+  id_promoter          Int?
+  dt_register          DateTime @db.DateTime(0)
+  dt_update            DateTime @db.DateTime(0)
+  id_status            Int      @default(1)
+  i_notification_count Int      @default(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_logs {
+  id_user_log Int      @id @default(autoincrement()) @db.UnsignedInt
+  id_user     Int      @db.UnsignedInt
+  log         String   @db.VarChar(1000)
+  i_status    Int      @default(1) @db.TinyInt
+  dt_register DateTime @default(now()) @db.Timestamp(0)
+  dt_updated  DateTime @default(now()) @db.Timestamp(0)
+  users       users    @relation(fields: [id_user], references: [id_user], map: "fk_logs_user")
+
+  @@index([id_user], map: "fk_logs_user")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model users {
+  id_user                Int                    @id @default(autoincrement()) @db.UnsignedInt
+  email                  String                 @unique(map: "uq_users_email") @db.VarChar(100)
+  password               String                 @db.VarChar(255)
+  i_rol                  Int                    @default(2) @db.TinyInt
+  i_status               Int                    @default(1) @db.TinyInt
+  dt_register            DateTime               @default(now()) @db.Timestamp(0)
+  dt_updated             DateTime               @default(now()) @db.Timestamp(0)
+  name                   String                 @db.VarChar(100)
+  lastname               String                 @db.VarChar(100)
+  reset_password_token   String?                @db.VarChar(500)
+  reset_password_expires DateTime?              @db.Timestamp(0)
+  id_client              Int                    @default(0) @db.UnsignedInt
+  id_user_creator        Int                    @default(0) @db.UnsignedInt
+  client_logs            client_logs[]
+  clients                clients[]              @relation(map: "fk_clients_user")
+  question_client_logs   question_client_logs[]
+  question_logs          question_logs[]
+  questions              questions[]
+  questions_client       questions_client[]
+  store_logs             store_logs[]
+  stores                 stores[]
+  user_logs              user_logs[]
+  orders                 orders[]
+
+  @@index([reset_password_token], map: "idx_reset_token")
+  @@index([i_rol, i_status], map: "idx_users_rol_status")
+}
+
+model sales_channels {
+  id Int @id @default(autoincrement()) @db.UnsignedInt
+  name String
+  description String?
+  url_image String?
+  is_active Boolean @default(true)
+
+  stores stores[]
+}

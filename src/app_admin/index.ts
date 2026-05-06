@@ -8,10 +8,17 @@ import { QuestionAdmin } from './questionAdmin';
 import { QuotationAdmin } from './quotationAdmin';
 import { ServiceOrderAdmin } from './serviceOrderAdmin';
 import { ServiceAdmin } from './serviceAdmin';
+import { RequestAdmin } from './requestAdmin';
+import { OrderAdmin } from './orderAdmin';
+import { PromoterAdmin } from './promoterAdmin';
 
 import { upload, uploadExcel } from '../core/middleware/upload.middleware';
+import { authMiddleware } from '../core/middleware/auth.middleware';
 
 import { CreateServicePayload } from "../core/interfaces/service";
+
+
+import userAdminRouter from "../modules/users/routes";
 
 const adminRouter: Router = express.Router();
 const getAdminUser = () => new UserAdmin();
@@ -21,6 +28,9 @@ const getAdminQuestion = () => new QuestionAdmin();
 const getAdminQuotation = () => new QuotationAdmin();
 const getAdminServiceOrder = () => new ServiceOrderAdmin();
 const getAdminService = () => new ServiceAdmin();
+const getRequestAdmin = () => new RequestAdmin();
+const getOrderAdmin = () => new OrderAdmin();
+const getPromoterAdmin = () => new PromoterAdmin();
 
 adminRouter.post(
   "/login",
@@ -36,6 +46,8 @@ adminRouter.post(
 
       userModel = getAdminUser();
       const result = await userModel.loginSuperAdmin(vc_username, vc_password);
+
+      console.log("Super admin inició sesión:", result);
 
       res.status(201).json({
         message: "Super admin inicio session correctamente",
@@ -77,9 +89,7 @@ adminRouter.post(
   },
 );
 
-adminRouter.post(
-  "/reset-password",
-  async (req: Request, res: Response): Promise<void> => {
+adminRouter.post("/reset-password", async (req: Request, res: Response): Promise<void> => {
     try {
       const { token, newPassword } = req.body;
 
@@ -105,19 +115,14 @@ adminRouter.post(
         success: true,
       });
     } catch (error) {
-      console.error(error);
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
 
-      // Errores específicos con códigos apropiados
-      if (
-        errorMessage.includes("Token inválido") ||
-        errorMessage.includes("expirado")
-      ) {
+      if (errorMessage.includes("Token inválido") || errorMessage.includes("expirado")) {
         res.status(401).json({
           error: errorMessage,
           success: false,
         });
+        
         return;
       }
 
@@ -130,24 +135,215 @@ adminRouter.post(
   },
 );
 
-adminRouter.post("/create-user-in-client", async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { name, lastname, email, id_client, id_user_creator } = req.body;
-    const userAdmin = getAdminUser();
-    const result = await userAdmin.createUserInClient(name, lastname, email, id_client, id_user_creator);
-    res.status(201).json({
-      message: "Usuario creado exitosamente",
-      data: result,
-    });
+adminRouter.get(
+  "/profile",
+  authMiddleware,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.id;
+      const userModel = getAdminUser();
+      const user = await userModel.getUserById(userId);
 
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      error: "Error creando usuario",
-      details: error instanceof Error ? error.message : String(error),
-    });
-  }
-});
+      res.status(200).json({ ok: true, data: user });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ ok: false, error: "Error al obtener perfil", details: error instanceof Error ? error.message : String(error) });
+    }
+  },
+);
+
+adminRouter.get(
+  "/users/client/:id_client",
+  authMiddleware,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const id_client = parseInt(req.params.id_client as string);
+      const userModel = getAdminUser();
+      const users = await userModel.getUsersByClient(id_client);
+      res.status(200).json({ ok: true, data: users });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ ok: false, error: error instanceof Error ? error.message : String(error) });
+    }
+  },
+);
+
+adminRouter.put(
+  "/users/:id/email",
+  authMiddleware,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = parseInt(req.params.id as string);
+      const { email } = req.body;
+      if (!email) {
+        res.status(400).json({ ok: false, error: "Email es requerido" });
+        return;
+      }
+      const userModel = getAdminUser();
+      const user = await userModel.updateUserEmail(userId, email);
+      res.status(200).json({ ok: true, data: user });
+    } catch (error) {
+      console.error(error);
+      const msg = error instanceof Error ? error.message : String(error);
+      const status = msg.includes("ya está en uso") ? 409 : 500;
+      res.status(status).json({ ok: false, error: msg });
+    }
+  },
+);
+
+adminRouter.put(
+  "/users/:id/profile",
+  authMiddleware,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = parseInt(req.params.id as string);
+      const { name, lastname } = req.body;
+      if (!name || !lastname) {
+        res.status(400).json({ ok: false, error: "name y lastname son requeridos" });
+        return;
+      }
+      const userModel = getAdminUser();
+      const user = await userModel.updateUserProfile(userId, name, lastname);
+      res.status(200).json({ ok: true, data: user });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ ok: false, error: error instanceof Error ? error.message : String(error) });
+    }
+  },
+);
+
+adminRouter.put(
+  "/users/:id/rol",
+  authMiddleware,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = parseInt(req.params.id as string);
+      const { i_rol } = req.body;
+      if (i_rol === undefined || i_rol === null) {
+        res.status(400).json({ ok: false, error: "i_rol es requerido" });
+        return;
+      }
+      const userModel = getAdminUser();
+      const user = await userModel.updateUserRol(userId, i_rol);
+      res.status(200).json({ ok: true, data: user });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ ok: false, error: error instanceof Error ? error.message : String(error) });
+    }
+  },
+);
+
+adminRouter.put(
+  "/users/:id/password",
+  authMiddleware,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = parseInt(req.params.id as string);
+      const { newPassword } = req.body;
+      if (!newPassword) {
+        res.status(400).json({ ok: false, error: "newPassword es requerido" });
+        return;
+      }
+      if (newPassword.length < 6) {
+        res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 6 caracteres" });
+        return;
+      }
+      const userModel = getAdminUser();
+      const result = await userModel.resetUserPassword(userId, newPassword);
+      res.status(200).json({ ok: true, message: result.message });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ ok: false, error: error instanceof Error ? error.message : String(error) });
+    }
+  },
+);
+
+adminRouter.delete(
+  "/users/:id",
+  authMiddleware,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = parseInt(req.params.id as string);
+      const userModel = getAdminUser();
+      const result = await userModel.deactivateUser(userId);
+      res.status(200).json({ ok: true, message: result.message });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ ok: false, error: error instanceof Error ? error.message : String(error) });
+    }
+  },
+);
+
+adminRouter.put(
+  "/users/:id/activate",
+  authMiddleware,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = parseInt(req.params.id as string);
+      const userModel = getAdminUser();
+      const result = await userModel.activateUser(userId);
+      res.status(200).json({ ok: true, message: result.message });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ ok: false, error: error instanceof Error ? error.message : String(error) });
+    }
+  },
+);
+
+adminRouter.post(
+  "/change-password",
+  authMiddleware,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      const userId = req.user!.id;
+
+      if (!currentPassword || !newPassword) {
+        res.status(400).json({ error: "Contraseña actual y nueva contraseña son requeridas" });
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        res.status(400).json({ error: "La nueva contraseña debe tener al menos 6 caracteres" });
+        return;
+      }
+
+      const userModel = getAdminUser();
+      const result = await userModel.changePassword(userId, currentPassword, newPassword);
+
+      res.status(200).json({ message: result.message, success: true });
+    } catch (error) {
+      console.error(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+
+      if (errorMessage.includes("incorrecta")) {
+        res.status(401).json({ error: errorMessage, success: false });
+        return;
+      }
+
+      res.status(500).json({ error: "Error al cambiar contraseña", details: errorMessage, success: false });
+    }
+  },
+);
+
+// adminRouter.post("/create-user-in-client", async (req: Request, res: Response): Promise<void> => {
+//   try {
+//     const { name, lastname, email, id_client, id_user_creator } = req.body;
+//     const userAdmin = getAdminUser();
+//     const result = await userAdmin.createUserInClient(name, lastname, email, id_client, id_user_creator);
+//     res.status(201).json({
+//       message: "Usuario creado exitosamente",
+//       data: result,
+//     });
+
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({
+//       error: "Error creando usuario",
+//       details: error instanceof Error ? error.message : String(error),
+//     });
+//   }
+// });
 
 adminRouter.post("/products", async (req: Request, res: Response): Promise<void> => {
   try {
@@ -684,7 +880,7 @@ adminRouter.get("/questions/:id_client/search/:search_term", async (req: Request
         const questionModel = getAdminQuestion();
         const questions = await questionModel.searchQuestionsForClient(
             Number(id_client),
-            search_term
+            String(search_term)
         );
 
         res.status(200).json({
@@ -1317,6 +1513,490 @@ adminRouter.post("/service", async (req: Request, res: Response): Promise<void> 
             message: "Error obteniendo logs del ticket",
             data: error instanceof Error ? error.message : String(error),
         });
+    }
+});
+
+// ==========================================
+// RUTAS PARA SOLICITUDES (REQUESTS)
+// ==========================================
+
+// 1. CREAR NUEVA SOLICITUD
+adminRouter.post(
+  "/requests",
+  async (req: Request, res: Response): Promise<void> => {
+    let requestModel: RequestAdmin | null = null;
+    try {
+      // Extraemos el JSON que manda el frontend
+      const { id_cliente, nombre_solicitud, costo_total, productos } = req.body;
+
+      // OJO: Si tienes el id del usuario en el token (req.user), úsalo aquí. 
+      // Por ahora lo tomamos del body o le ponemos un valor por defecto para que no falle.
+      const id_user = req.body.id_user || 1; 
+
+      if (!id_cliente || !nombre_solicitud || !productos || !Array.isArray(productos)) {
+        res.status(400).json({ error: "Faltan datos obligatorios o el formato es incorrecto" });
+        return;
+      }
+
+      requestModel = getRequestAdmin();
+      const result = await requestModel.createRequest({
+        id_user,
+        id_cliente,
+        nombre_solicitud,
+        costo_total,
+        productos
+      });
+
+      res.status(201).json({
+        ok: true,
+        message: "Solicitud creada correctamente",
+        data: result,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ ok: false, error: "Error creando la solicitud", details: error });
+    } finally {
+      requestModel = null;
+    }
+  }
+);
+
+// 2. OBTENER SOLICITUDES POR CLIENTE
+adminRouter.get(
+  "/requests/client/:id_client",
+  async (req: Request, res: Response): Promise<void> => {
+    let requestModel: RequestAdmin | null = null;
+    try {
+      const id_client = parseInt(String(req.params.id_client));
+
+      if (isNaN(id_client)) {
+        res.status(400).json({ error: "El id_client debe ser un número válido" });
+        return;
+      }
+
+      requestModel = getRequestAdmin();
+      const result = await requestModel.getRequestsByClient(id_client);
+
+      res.status(200).json({
+        ok: true,
+        data: result,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ ok: false, error: "Error obteniendo las solicitudes", details: error });
+    } finally {
+      requestModel = null;
+    }
+  }
+);
+
+// 3. OBTENER DETALLE DE UNA SOLICITUD (Con productos y preguntas)
+adminRouter.get(
+  "/requests/:id_request",
+  async (req: Request, res: Response): Promise<void> => {
+    let requestModel: RequestAdmin | null = null;
+    try {
+      const id_request = parseInt(String(req.params.id_request));
+
+      if (isNaN(id_request)) {
+        res.status(400).json({ error: "El id_request debe ser un número válido" });
+        return;
+      }
+
+      requestModel = getRequestAdmin();
+      const result = await requestModel.getRequestById(id_request);
+
+      if (!result) {
+        res.status(404).json({ ok: false, error: "Solicitud no encontrada" });
+        return;
+      }
+
+      res.status(200).json({
+        ok: true,
+        data: result,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ ok: false, error: "Error obteniendo el detalle de la solicitud", details: error });
+    } finally {
+      requestModel = null;
+    }
+  }
+);
+
+// ACTUALIZAR SOLICITUD COMPLETA (Productos y Preguntas)
+adminRouter.put(
+  "/requests/:id_request/full",
+  async (req: Request, res: Response): Promise<void> => {
+    let requestModel: RequestAdmin | null = null;
+    try {
+      const id_request = parseInt(String(req.params.id_request));
+      // Recibimos el mismo payload que usamos para Crear
+      const { id_cliente, nombre_solicitud, costo_total, productos } = req.body;
+      const id_user = req.body.id_user || 1;
+
+      if (isNaN(id_request)) {
+        res.status(400).json({ error: "El id_request debe ser un número válido" });
+        return;
+      }
+
+      if (!nombre_solicitud || !productos || !Array.isArray(productos)) {
+        res.status(400).json({ error: "Faltan datos obligatorios para la actualización completa" });
+        return;
+      }
+
+      requestModel = getRequestAdmin();
+      const result = await requestModel.updateFullRequest(id_request, {
+        id_user,
+        id_cliente,
+        nombre_solicitud,
+        costo_total,
+        productos
+      });
+
+      res.status(200).json({
+        ok: true,
+        data: result,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ ok: false, error: "Error actualizando la solicitud completa", details: error });
+    } finally {
+      requestModel = null;
+    }
+  }
+);
+
+// 5. ELIMINAR SOLICITUD (Borrado lógico)
+adminRouter.delete(
+  "/requests/:id_request",
+  async (req: Request, res: Response): Promise<void> => {
+    let requestModel: RequestAdmin | null = null;
+    try {
+      const id_request = parseInt(String(req.params.id_request));
+
+      if (isNaN(id_request)) {
+        res.status(400).json({ error: "El id_request debe ser un número válido" });
+        return;
+      }
+
+      requestModel = getRequestAdmin();
+      const result = await requestModel.deleteRequest(id_request);
+
+      res.status(200).json({
+        ok: true,
+        data: result,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ ok: false, error: "Error eliminando la solicitud", details: error });
+    } finally {
+      requestModel = null;
+    }
+  }
+);
+
+// interface CreateOrderPayload {
+//     id_user: number;
+//     id_client: number;
+//     id_request: number;
+//     stores: number[];
+// }
+
+adminRouter.post('/orders', async (req: Request, res: Response): Promise<void> => {
+  let orderModel: OrderAdmin | null = null;
+  try {
+    const { id_user, id_client, id_request, stores } = req.body;
+
+    orderModel = getOrderAdmin();
+    const result = await orderModel.createOrder({
+      id_user,
+      id_client,
+      id_request,
+      stores
+    });
+
+    res.status(201).json({
+      ok: true,
+      message: "Orden creada exitosamente",
+      data: result,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ ok: false, error: "Error creando la orden", details: error });
+  } finally {
+    orderModel = null;
+  }
+});
+
+
+adminRouter.get('/orders/client/:id_client', async (req: Request, res: Response): Promise<void> => {
+  let orderModel: OrderAdmin | null = null;
+  try {
+    const id_client = parseInt(String(req.params.id_client));
+
+    if (isNaN(id_client)) {
+      res.status(400).json({ ok: false, error: "El id_client debe ser un número válido" });
+      return;
+    }
+
+    orderModel = getOrderAdmin();
+    const result = await orderModel.getOrdersByClient(id_client);
+
+    res.status(200).json({
+      ok: true,
+      data: result,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ ok: false, error: "Error obteniendo los pedidos del cliente", details: error });
+  } finally {
+    orderModel = null;
+  }
+});
+
+// GET: Obtener el detalle de un pedido (incluyendo sus tareas)
+adminRouter.get('/orders/:id_order', async (req: Request, res: Response): Promise<void> => {
+  let orderModel: OrderAdmin | null = null;
+  try {
+    const id_order = parseInt(String(req.params.id_order));
+
+    if (isNaN(id_order)) {
+      res.status(400).json({ ok: false, error: "El id_order debe ser un número válido" });
+      return;
+    }
+
+    orderModel = getOrderAdmin();
+    const result = await orderModel.getOrderById(id_order);
+
+    if (!result) {
+      res.status(404).json({ ok: false, error: "Pedido no encontrado" });
+      return;
+    }
+
+    res.status(200).json({
+      ok: true,
+      data: result,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ ok: false, error: "Error obteniendo el detalle del pedido", details: error });
+  } finally {
+    orderModel = null;
+  }
+});
+
+adminRouter.put('/admin/task/:id_task/assign', async (req: Request, res: Response): Promise<void> => {
+    let orderModel: OrderAdmin | null = null;
+    try {
+        const id_task = parseInt(String(req.params.id_task));
+        const { id_promoter } = req.body;
+        if (isNaN(id_task) || !id_promoter) {
+            res.status(400).json({ ok: false, error: "El id_task debe ser un número válido y se requiere id_promoter" });
+            return;
+        }
+        orderModel = getOrderAdmin();
+        const result = await orderModel.assignPromoterToTask(id_task, id_promoter);
+        res.status(200).json({ ok: true, data: result });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ ok: false, error: "Error asignando tarea", details: error });
+    }
+});
+
+adminRouter.put('/admin/task/:id_task/reject', async (req: Request, res: Response): Promise<void> => {
+    let orderModel: OrderAdmin | null = null;
+    try {
+        const id_task = parseInt(String(req.params.id_task));
+        if (isNaN(id_task)) {
+            res.status(400).json({ ok: false, error: "El id_task debe ser un número válido" });
+            return;
+        }
+        orderModel = getOrderAdmin();
+        const result = await orderModel.rejectTask(id_task);
+        res.status(200).json({ ok: true, data: result });
+    } catch (error: any) {
+        console.error(error);
+        const isValidationError = error?.message?.includes("no está en estatus 5");
+        res.status(isValidationError ? 409 : 500).json({ ok: false, error: error?.message ?? "Error rechazando tarea" });
+    }
+});
+
+adminRouter.post('/promoters', async (req: Request, res: Response): Promise<void> => {
+    let promoterModel: PromoterAdmin | null = null;
+    try {
+        const { vc_name, vc_email, vc_password, vc_phone } = req.body;
+
+        if (!vc_name || !vc_email || !vc_password) {
+            res.status(400).json({ ok: false, error: "Nombre, email y contraseña son obligatorios" });
+            return;
+        }
+
+        promoterModel = getPromoterAdmin();
+        const result = await promoterModel.createPromoter({ vc_name, vc_email, vc_password, vc_phone });
+
+        res.status(201).json({ ok: true, data: result });
+    } catch (error: any) {
+        console.error(error);
+        res.status(500).json({ ok: false, error: error.message || "Error creando promotor" });
+    } finally {
+        promoterModel = null;
+    }
+});
+
+// 2. OBTENER TODOS LOS PROMOTORES
+adminRouter.get('/promoters', async (req: Request, res: Response): Promise<void> => {
+    let promoterModel: PromoterAdmin | null = null;
+    try {
+        promoterModel = getPromoterAdmin();
+        const result = await promoterModel.getAllPromoters();
+
+        res.status(200).json({ ok: true, data: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ ok: false, error: "Error obteniendo promotores" });
+    } finally {
+        promoterModel = null;
+    }
+});
+
+// 3. OBTENER UN PROMOTOR POR ID
+adminRouter.get('/promoters/:id', async (req: Request, res: Response): Promise<void> => {
+    let promoterModel: PromoterAdmin | null = null;
+    try {
+        const id = parseInt(String(req.params.id));
+        if (isNaN(id)) {
+            res.status(400).json({ ok: false, error: "ID inválido" });
+            return;
+        }
+
+        promoterModel = getPromoterAdmin();
+        const result = await promoterModel.getPromoterById(id);
+
+        if (!result) {
+            res.status(404).json({ ok: false, error: "Promotor no encontrado" });
+            return;
+        }
+
+        res.status(200).json({ ok: true, data: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ ok: false, error: "Error obteniendo el promotor" });
+    } finally {
+        promoterModel = null;
+    }
+});
+
+// 4. ACTUALIZAR PROMOTOR
+adminRouter.put('/promoters/:id', async (req: Request, res: Response): Promise<void> => {
+    let promoterModel: PromoterAdmin | null = null;
+    try {
+        const id = parseInt(String(req.params.id));
+        const { vc_name, vc_phone, b_active } = req.body;
+
+        if (isNaN(id)) {
+            res.status(400).json({ ok: false, error: "ID inválido" });
+            return;
+        }
+
+        promoterModel = getPromoterAdmin();
+        const result = await promoterModel.updatePromoter(id, { vc_name, vc_phone, b_active });
+
+        res.status(200).json({ ok: true, data: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ ok: false, error: "Error actualizando el promotor" });
+    } finally {
+        promoterModel = null;
+    }
+});
+
+// 5. ELIMINAR PROMOTOR (Borrado lógico)
+adminRouter.delete('/promoters/:id', async (req: Request, res: Response): Promise<void> => {
+    let promoterModel: PromoterAdmin | null = null;
+    try {
+        const id = parseInt(String(req.params.id));
+        if (isNaN(id)) {
+            res.status(400).json({ ok: false, error: "ID inválido" });
+            return;
+        }
+
+        promoterModel = getPromoterAdmin();
+        const result = await promoterModel.deletePromoter(id);
+
+        res.status(200).json({ ok: true, data: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ ok: false, error: "Error eliminando el promotor" });
+    } finally {
+        promoterModel = null;
+    }
+});
+
+adminRouter.post('/promoters/login', async (req: Request, res: Response): Promise<void> => {
+    let promoterModel: PromoterAdmin | null = null;
+    try {
+        const { vc_phone, vc_password, vc_fcm_token, f_latitude, f_longitude } = req.body;
+
+        if (!vc_phone || !vc_password) {
+            res.status(400).json({ ok: false, error: "El teléfono y la contraseña son obligatorios" });
+            return;
+        }
+
+        promoterModel = new PromoterAdmin();
+        const result = await promoterModel.loginPromoter(vc_phone, vc_password, vc_fcm_token || null, f_latitude ?? null, f_longitude ?? null);
+
+        res.status(200).json({ ok: true, data: result });
+    } catch (error: any) {
+        console.error(error);
+        res.status(401).json({ ok: false, error: error.message || "Credenciales inválidas" });
+    } finally {
+        promoterModel = null;
+    }
+});
+
+adminRouter.get('/countries', async (req: Request, res: Response): Promise<void> => {
+    let userModel: UserAdmin | null = null;
+    try {
+        userModel = new UserAdmin();
+        const result = await userModel.getCountriesList();
+        res.status(200).json({ ok: true, data: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ ok: false, error: "Error obteniendo lista de países", error_details: error instanceof Error ? error.message : String(error) });
+    } finally {
+        userModel = null;
+    }
+});
+
+adminRouter.get('/states/:id_country', async (req: Request, res: Response): Promise<void> => {
+    let userModel: UserAdmin | null = null;
+    try {
+        const id_country = parseInt(req.params.id_country as string);
+        userModel = new UserAdmin();
+        const result = await userModel.getStatesList(id_country);
+        res.status(200).json({ ok: true, data: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ ok: false, error: "Error obteniendo lista de estados", error_details: error instanceof Error ? error.message : String(error) });
+    } finally {
+        userModel = null;
+    }
+});
+
+adminRouter.get('/cities/:id_country/:id_state', async (req: Request, res: Response): Promise<void> => {
+    let userModel: UserAdmin | null = null;
+    try {
+        const id_country = parseInt(req.params.id_country as string);
+        const id_state = parseInt(req.params.id_state as string);
+        userModel = new UserAdmin();
+        const result = await userModel.getCitiesList(id_country, id_state);
+        res.status(200).json({ ok: true, data: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ ok: false, error: "Error obteniendo lista de ciudades", error_details: error instanceof Error ? error.message : String(error) });
+    } finally {
+        userModel = null;
     }
 });
 

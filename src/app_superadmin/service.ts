@@ -40,7 +40,8 @@ export class Service {
                 throw new Error("No se pudo obtener el ID del servicio registrado.");
             }
             
-            return serviceRows[0].id_service;
+            const id_service = serviceRows[0].id_service;
+            return id_service;
         } catch (error) {
             console.log("f.registerService: ", error);
         }

@@ -33,11 +33,7 @@ export class User {
         "INSERT INTO users (email, password, i_rol, name, lastname) VALUES (?, ?, 1, ?, ?)",
         [email, hased_password, name, lastname],
       );
-      await Utils.registerUserLog(
-        this.db,
-        result.insertId,
-        "Super admin creado",
-      );
+
       if (commit) {
         await this.db.commit();
       }
@@ -62,14 +58,16 @@ export class User {
       const tokenPayload: TokenPayload = {
         id: user.id_user!,
         email: user.email,
+        id_client: user.id_client!,
+        i_rol: user.i_rol
       };
       const token = Utils.generate_token(tokenPayload);
 
-      await Utils.registerUserLog(
-        this.db,
-        user.id_user!,
-        "Usuario inició sesión"
-      );
+      // await Utils.registerUserLog(
+      //   this.db,
+      //   user.id_user!,
+      //   "Usuario inició sesión"
+      // );
 
       const { password: _, ...userWithoutPassword } = user;
 
@@ -93,8 +91,13 @@ export class User {
       const token = Utils.generate_token({
         id: user.id_user!,
         email: user.email,
+        id_client: user.id_client!,
+        i_rol: user.i_rol
       });
+
+
       const expiresAt = new Date(Date.now() + 3600000);
+
       await this.updateResetToken(user.id_user!, token, expiresAt);
 
       // Crear link de recuperación
@@ -161,7 +164,6 @@ export class User {
     }
   }
 
-  // Método para verificar el token y cambiar la contraseña
   async resetPasswordWithToken(token: string, newPassword: string) {
     try {
       const user_data = await this.getUserByResetToken(token);
@@ -170,10 +172,7 @@ export class User {
         throw new Error("Token inválido o expirado");
       }
 
-      if (
-        user_data.reset_password_token !== token ||
-        new Date(user_data.reset_password_expires!) < new Date()
-      ) {
+      if (user_data.reset_password_token !== token || new Date(user_data.reset_password_expires!) < new Date()) {
         throw new Error("El token ha expirado");
       }
 
@@ -187,11 +186,12 @@ export class User {
         getPasswordChangedTemplate(user_data.name),
       );
 
-      await Utils.registerUserLog(
-        this.db,
-        user_data.id_user,
-        "Contraseña restablecida exitosamente"
-      );
+      // TODO actualizar esto despues
+      // await Utils.registerUserLog(
+      //   this.db,
+      //   user_data.id_user,
+      //   "Contraseña restablecida exitosamente"
+      // );
 
       return {
         message: "Contraseña actualizada exitosamente",
@@ -218,6 +218,37 @@ export class User {
       return (rows[0] as IUser) || null;
     } catch (error) {
       throw new Error("Error al buscar usuario por token");
+    }
+  }
+
+  async changePassword(userId: number, currentPassword: string, newPassword: string) {
+    try {
+      const [result]: any[] = await this.db.query(
+        "SELECT id_user, email, password, name FROM users WHERE id_user = ? LIMIT 1",
+        [userId],
+      );
+      const user = result[0];
+      if (!user) {
+        throw new Error("Usuario no encontrado");
+      }
+
+      const isValid = await Utils.compare_password(currentPassword, user.password);
+      if (!isValid) {
+        throw new Error("Contraseña actual incorrecta");
+      }
+
+      const hashedPassword = await Utils.hash_password(newPassword);
+      await this.updatePassword(userId, hashedPassword);
+
+      await Utils.sendEmail(
+        user.email,
+        "Contraseña Actualizada",
+        getPasswordChangedTemplate(user.name),
+      );
+
+      return { message: "Contraseña actualizada exitosamente" };
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -262,8 +293,6 @@ export class User {
       }
 
       const userId = (await this.db.select<RowDataPacket[]>("SELECT LAST_INSERT_ID() AS id"))[0].id;
-      await Utils.registerUserLog(this.db, userId, `Usuario creado en cliente ID: ${id_client}`);
-      
 
       // Obtener datos del usuario y cliente
       const user = await this.getUserById(userId);
@@ -273,6 +302,8 @@ export class User {
       const token = Utils.generate_token({
         id: user.id_user!,
         email: user.email,
+        id_client: user.id_client!,
+        i_rol: user.i_rol
       });
       const expiresAt = new Date(Date.now() + 3600000);
       await this.updateResetToken(user.id_user!, token, expiresAt);
@@ -293,6 +324,155 @@ export class User {
       return user;
     } catch (error) {
       throw error;
+    }
+  }
+
+  async getUsersByClient(id_client: number): Promise<IUser[]> {
+    try {
+      const [result]: any[] = await this.db.query(
+        "SELECT id_user, email, name, lastname, i_rol, i_status, dt_register, dt_updated FROM users WHERE id_client = ? ORDER BY name ASC",
+        [id_client]
+      );
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateUserEmail(userId: number, email: string) {
+    try {
+      const existing = await this.db.select<RowDataPacket[]>(
+        "SELECT id_user FROM users WHERE email = ? AND id_user != ?",
+        [email, userId]
+      );
+      if (existing.length > 0) {
+        throw new Error("El correo electrónico ya está en uso");
+      }
+      await this.db.query("UPDATE users SET email = ? WHERE id_user = ?", [email, userId]);
+      return await this.getUserById(userId);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateUserProfile(userId: number, name: string, lastname: string) {
+    try {
+      await this.db.query(
+        "UPDATE users SET name = ?, lastname = ? WHERE id_user = ?",
+        [name, lastname, userId]
+      );
+      return await this.getUserById(userId);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateUserRol(userId: number, i_rol: number) {
+    try {
+      await this.db.query("UPDATE users SET i_rol = ? WHERE id_user = ?", [i_rol, userId]);
+      return await this.getUserById(userId);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async resetUserPassword(userId: number, newPassword: string) {
+    try {
+      const user = await this.getUserById(userId);
+      const hashedPassword = await Utils.hash_password(newPassword);
+      await this.updatePassword(userId, hashedPassword);
+      await Utils.sendEmail(
+        user.email,
+        "Contraseña Actualizada",
+        getPasswordChangedTemplate(user.name),
+      );
+      return { message: "Contraseña restablecida exitosamente" };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async deactivateUser(userId: number) {
+    try {
+      await this.db.query("UPDATE users SET i_status = 0 WHERE id_user = ?", [userId]);
+      return { message: "Usuario desactivado exitosamente" };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async activateUser(userId: number) {
+    try {
+      await this.db.query("UPDATE users SET i_status = 1 WHERE id_user = ?", [userId]);
+      return { message: "Usuario activado exitosamente" };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getCountriesList(){
+    try {
+      const query = `SELECT id, name FROM countries WHERE is_active = 1 ORDER BY name ASC`;
+      const rows = await this.db.select<RowDataPacket[]>(query);
+      return rows;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getCountryById(id_country: number){
+    try {
+      const query = `SELECT id, name FROM countries WHERE id = ? AND is_active = 1 LIMIT 1`;
+      const rows = await this.db.select<RowDataPacket[]>(query
+        , [id_country]);
+      return rows.length > 0 ? rows[0] : null;
+    }
+    catch (error) {
+      throw error;
+    }
+  }
+
+
+  async getStatesList(id_country: number){
+    try {
+        const query = `SELECT id, name FROM states WHERE id_country = ? AND is_active = 1 ORDER BY name ASC`;
+        const rows = await this.db.select<RowDataPacket[]>(query, [id_country]);
+        return rows;
+    } catch (error) {
+        throw error;
+    }
+  }
+
+  async getStateById(id_state: number){
+    try {
+        const query = `SELECT id, id_country, name FROM states WHERE id = ? AND is_active = 1 LIMIT 1`; 
+        const rows = await this.db.select<RowDataPacket[]>(query
+        , [id_state]);
+        return rows.length > 0 ? rows[0] : null;
+    } catch (error) {
+        throw error;
+    }
+  }
+
+
+  async getCitiesList(id_country: number, id_state: number){
+    try {
+        const query = `SELECT id, name FROM cities WHERE id_country = ? AND id_state = ? AND is_active = 1 ORDER BY name ASC`;
+        const rows = await this.db.select<RowDataPacket[]>(query, [id_country, id_state]);
+        return rows;
+    } catch (error) {
+        throw error;
+    }
+  }
+
+  async getCityById(id_city: number){
+    try {
+        const query = `SELECT id, id_country, id_state, name FROM cities WHERE id = ? AND is_active = 1 LIMIT 1`; 
+        const rows = await this.db.select<RowDataPacket[]>(query
+        , [id_city]);
+        return rows.length > 0 ? rows[0] : null;
+    } catch (error) {
+        throw error;
     }
   }
 }

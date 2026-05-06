@@ -1,5 +1,6 @@
 import db from '../config/database';
 import { Database } from '../core/database';
+import { Utils } from '../core/utils';
 import {
     IQuotation,
     ICreateQuotationPayload,
@@ -14,21 +15,6 @@ export class QuotationAdmin {
     protected db: Database = db;
 
     constructor() {}
-
-    // ==================== LOGS ====================
-
-    private async registerQuotationLog(
-        id_quotation: number,
-        id_user: number,
-        log: string,
-        i_type: LogType = 1
-    ) {
-        const query = `
-            INSERT INTO quotation_logs (id_quotation, id_user, log, i_type)
-            VALUES (?, ?, ?, ?)
-        `;
-        await this.db.execute(query, [id_quotation, id_user, log, i_type]);
-    }
 
     // ==================== CRUD COTIZACIONES ====================
 
@@ -72,9 +58,6 @@ export class QuotationAdmin {
 
             // Recalcular totales
             await this.recalculateTotals(id_quotation);
-
-            // Registrar log
-            await this.registerQuotationLog(id_quotation, id_user, 'Cotización creada', 1);
 
             if (commit) {
                 await this.db.commit();
@@ -251,16 +234,6 @@ export class QuotationAdmin {
             // Recalcular totales
             await this.recalculateTotals(id_quotation);
 
-            // Registrar log
-            if (changes.length > 0) {
-                await this.registerQuotationLog(
-                    id_quotation,
-                    id_user,
-                    `Cotización actualizada: ${changes.join(', ')}`,
-                    1
-                );
-            }
-
             if (commit) {
                 await this.db.commit();
             }
@@ -293,8 +266,6 @@ export class QuotationAdmin {
                     message: "Cotización no encontrada"
                 };
             }
-
-            await this.registerQuotationLog(id_quotation, id_user, 'Cotización eliminada', 1);
 
             return {
                 ok: true,

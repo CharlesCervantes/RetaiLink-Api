@@ -1,5 +1,6 @@
 import db from '../config/database';
 import { Database } from '../core/database';
+import { Utils } from '../core/utils';
 import {
     IServiceOrder,
     IServiceTicket,
@@ -52,32 +53,7 @@ export class ServiceOrderAdmin {
     }
 
     // ==================== LOGS ====================
-
-    private async registerServiceOrderLog(
-        id_service_order: number,
-        id_user: number,
-        log: string,
-        i_type: LogType = 1
-    ) {
-        const query = `
-            INSERT INTO service_order_logs (id_service_order, id_user, log, i_type)
-            VALUES (?, ?, ?, ?)
-        `;
-        await this.db.execute(query, [id_service_order, id_user, log, i_type]);
-    }
-
-    private async registerTicketLog(
-        id_ticket: number,
-        id_user: number,
-        log: string,
-        i_type: LogType = 1
-    ) {
-        const query = `
-            INSERT INTO ticket_logs (id_ticket, id_user, log, i_type)
-            VALUES (?, ?, ?, ?)
-        `;
-        await this.db.execute(query, [id_ticket, id_user, log, i_type]);
-    }
+    // Los logs de esta entidad usan Utils.registerServiceOrderLog y Utils.registerTicketLog
 
     // ==================== CREAR ORDEN Y TICKETS ====================
 
@@ -168,22 +144,6 @@ export class ServiceOrderAdmin {
 
             const id_service_order = orderResult.insertId;
 
-            // 5. Registrar log de orden (bitácora)
-            await this.registerServiceOrderLog(
-                id_service_order,
-                id_user,
-                `Orden creada desde cotización "${quotationData.quotation_name}"`,
-                1
-            );
-
-            // Log transaccional (oculto)
-            await this.registerServiceOrderLog(
-                id_service_order,
-                id_user,
-                `Orden generada: ${stores.length} tickets, monto total: $${totalAmount}`,
-                2
-            );
-
             // 6. Crear tickets (1 por establecimiento)
             const ticketsCreated: number[] = [];
 
@@ -213,9 +173,6 @@ export class ServiceOrderAdmin {
                         VALUES (?, ?, ?)
                     `, [id_ticket, question.id_question, question.question_price]);
                 }
-
-                // Log del ticket
-                await this.registerTicketLog(id_ticket, id_user, 'Ticket creado', 1);
             }
 
             // 7. Actualizar estado de cotización a "confirmado"
@@ -536,9 +493,6 @@ export class ServiceOrderAdmin {
                     message: "Orden no encontrada o ya está pagada"
                 };
             }
-
-            await this.registerServiceOrderLog(id_service_order, id_user, 'Pago registrado', 1);
-            await this.registerServiceOrderLog(id_service_order, id_user, 'payment_status: 0 -> 1', 2);
 
             return {
                 ok: true,
